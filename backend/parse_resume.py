@@ -59,8 +59,8 @@ def _split_sections(text: str) -> dict[str, str]:
         r"^(SUMMARY|PROFESSIONAL SUMMARY|EXPERIENCE|WORK EXPERIENCE|PROFESSIONAL EXPERIENCE|WORK HISTORY|"
         r"SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|"
         r"EDUCATION|ACADEMIC BACKGROUND|"
-        r"CERTIFICATIONS?|LICENSES? & CERTIFICATIONS?|"
-        r"PROJECTS|ACHIEVEMENTS?|ACCOMPLISHMENTS?|"
+        r"CERTIFICATIONS?|LICENSES? & CERTIFICATIONS?|LICENSES? AND CERTIFICATIONS?|"
+        r"PROJECTS?|ACHIEVEMENTS?|ACCOMPLISHMENTS?|"
         r"AWARDS?(?:\s*&\s*(?:RECOGNITION|HONORS?))?|HONORS?|REWARDS?|"
         r"SOFT SKILLS?|INTERPERSONAL SKILLS?|"
         r"LANGUAGES?|PUBLICATIONS?|VOLUNTEERING?|"
@@ -132,8 +132,10 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
         "focus":    _parse_focus(text, sections.get("SUMMARY", "")),
         "skills":   _parse_skills(sections.get("SKILLS", sections.get("TECHNICAL SKILLS", ""))),
         "experience": _parse_experience(sections.get("EXPERIENCE", sections.get("WORK EXPERIENCE", sections.get("PROFESSIONAL EXPERIENCE", sections.get("WORK HISTORY", ""))))),
-        "certifications": _parse_certifications(sections.get("CERTIFICATIONS", "")),
-        "projects": [],
+        "certifications": _parse_certifications(
+            sections.get("CERTIFICATIONS", sections.get("LICENSES & CERTIFICATIONS", ""))
+        ),
+        "projects": _parse_projects(sections.get("PROJECTS", "")),
         "education": _parse_education(sections.get("EDUCATION", "")),
         "achievements": [],
         "extras": _parse_extras(sections),
@@ -191,19 +193,149 @@ def _parse_focus(full_text: str, summary: str) -> list[str]:
     return focus_items[:6]  # cap at 6 items
 
 
-def _parse_experience(text: str) -> list[dict]:
+def _parse_experience_piped(text: str) -> list[dict]:
     """
-    Parse experience from both traditional resume format and LinkedIn PDF export format.
-    LinkedIn format: Company → Title → Date Range (Duration) → Location → Bullets
-    Traditional format: Company + Date on same line, Title below, then bullets
+    Parse 'Title | Company | Date' format — common in modern resume templates.
+    Lines starting with whitespace or explicit bullet chars are bullets.
+    Unwrapped continuation lines are merged into the previous bullet.
+    """
+    pipe_re = re.compile(r'^(.+?)\s*\|\s*(.+?)\s*\|\s*(.+)$')
+    bullet_char_re = re.compile(r'^[•\-*→✦►▶]\s*(.+)')
+
+    raw_lines = text.splitlines()
+    entries = []
+    current = None
+
+    for raw in raw_lines:
+        stripped = raw.strip()
+        if not stripped:
+            continue
+
+        m = pipe_re.match(stripped)
+        if m:
+            if current:
+                entries.append(current)
+            period = m.group(3).strip()
+            current = {
+                "company": m.group(2).strip(),
+                "companyDesc": "",
+                "period": period,
+                "roles": [{"title": m.group(1).strip(), "period": period, "stack": "", "bullets": []}],
+            }
+            continue
+
+        if current is None:
+            continue
+
+        role = current["roles"][-1]
+        bm = bullet_char_re.match(stripped)
+        leading_space = raw and raw[0] in (' ', '\t')
+
+        if bm:
+            role["bullets"].append(bm.group(1).strip())
+        elif leading_space:
+            # Leading whitespace = new bullet in this format
+            role["bullets"].append(stripped)
+        elif role["bullets"]:
+            # No leading space, no bullet char = continuation of last bullet
+            role["bullets"][-1] = role["bullets"][-1].rstrip() + ' ' + stripped
+        else:
+            # First text after header, no bullets yet — treat as first bullet
+            role["bullets"].append(stripped)
+
+    if current:
+        entries.append(current)
+
+    return entries
+
+
+def _parse_projects(text: str) -> list[dict]:
+    """
+    Best-effort project parser. Handles formats like:
+      Project Name | Tech, Stack | optional-link
+      Project Name
+      Description / bullets
     """
     if not text.strip():
         return []
 
+    pipe_re = re.compile(r'^(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$')
+    bullet_re = re.compile(r'^[•\-*→✦►▶]\s*(.+)')
+    url_re = re.compile(r'https?://\S+')
+
+    raw_lines = text.splitlines()
+    projects = []
+    current = None
+
+    def flush():
+        if current and current.get("name"):
+            projects.append(current)
+
+    for raw in raw_lines:
+        line = raw.strip()
+        if not line:
+            continue
+
+        m = pipe_re.match(line)
+        if m:
+            flush()
+            stack_str = m.group(2).strip() if m.group(2) else ""
+            link = m.group(3).strip() if m.group(3) else ""
+            if url_re.search(stack_str):
+                link = url_re.search(stack_str).group(0)
+                stack_str = url_re.sub("", stack_str).strip(" |,")
+            current = {
+                "name": m.group(1).strip(),
+                "desc": "",
+                "stack": [s.strip() for s in re.split(r'[,·]', stack_str) if s.strip()],
+                "github": link or "",
+                "status": "done",
+                "academic": False,
+            }
+            continue
+
+        bm = bullet_re.match(line)
+        if bm:
+            if current is None:
+                continue
+            if not current["desc"]:
+                current["desc"] = bm.group(1).strip()
+            continue
+
+        # Short non-bullet line with no lowercase-heavy content = project name
+        if len(line) < 80 and not re.search(r'^[a-z]', line) and not url_re.search(line):
+            flush()
+            current = {"name": line, "desc": "", "stack": [], "github": "", "status": "done", "academic": False}
+        elif current:
+            if not current["desc"]:
+                current["desc"] = line
+            elif url_re.search(line):
+                current["github"] = url_re.search(line).group(0)
+
+    flush()
+    return projects
+
+
+def _parse_experience(text: str) -> list[dict]:
+    """
+    Parse experience — handles three formats:
+    1. Pipe: "Title | Company | Date" (modern resume templates)
+    2. LinkedIn PDF: Company → Title → Date (Duration) → Location → Bullets
+    3. Traditional: Company + Date on same line, Title below, bullets
+    """
+    if not text.strip():
+        return []
+
+    # Detect pipe format and delegate
+    if re.search(r'^.+\|.+\|.+', text, re.MULTILINE):
+        return _parse_experience_piped(text)
+
     date_re = re.compile(
         r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|'
         r'Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
-        r'\s+\d{4}|\b\d{4}\s*[-–—]\s*(?:\d{4}|Present|Current|Now)',
+        r'\s+\d{4}|\b\d{4}\s*[-–—]\s*(?:\d{4}|Present|Current|Now)'
+        r'|\b\d{1,2}/\d{2,4}\s*[-–—]\s*(?:\d{1,2}/\d{2,4}|Present|Current|Now)'
+        r'|\b\d{1,2}/\d{2,4}',
         re.IGNORECASE
     )
     period_re = re.compile(

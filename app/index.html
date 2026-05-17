@@ -28,31 +28,9 @@
       </p>
     </section>
 
-    <!-- Step 2: Enrich -->
+    <!-- Step 2: Review details -->
     <section class="step">
-      <h2>Step 2 — Add anything that's not in the resume <span class="optional">optional</span></h2>
-      <p class="hint">
-        Paste anything here — recent projects, a new role that started last month, skills you've picked up, accomplishments worth adding, even a rough bullet list.
-        This enriches the resume data rather than replacing it. We'll merge it intelligently.
-      </p>
-      <textarea id="enrichment" rows="10" placeholder="Examples:
-— Just started as Staff Engineer at Acme Corp in Jan 2025
-— Built an internal LLM tool using Claude + MCP that cut incident triage time by 40%
-— Added Terraform and Kubernetes to my stack this year
-— Got AWS Solutions Architect cert last month: https://credly.com/badges/...
-— Spoke at DataEngConf 2025 on real-time pipeline design"></textarea>
-      <p class="merge-note">
-        Enrichment text takes precedence over the resume for fields that overlap (e.g. current role, recent skills).
-        Older structured data from the PDF is kept where no enrichment is provided.
-      </p>
-      <p class="merge-note" style="margin-top:0.6rem; border-color: #f59e0b;">
-        <strong>Non-AI mode tip:</strong> The rule-based parser works best with standard PDF resumes. For LinkedIn exports or complex layouts, enable AI parsing (Step 4) for much better results.
-      </p>
-    </section>
-
-    <!-- Step 3: Review details -->
-    <section class="step">
-      <h2>Step 3 — Review &amp; correct</h2>
+      <h2>Step 2 — Review &amp; correct</h2>
       <p class="hint">Pre-filled from your resume where possible. Override anything here — these always take precedence.</p>
 
       <div class="field-grid">
@@ -137,13 +115,13 @@
       </div>
     </section>
 
-    <!-- Step 4: AI (optional) -->
+    <!-- Step 3: AI (optional) -->
     <section class="step">
-      <h2>Step 4 — AI-powered parsing <span class="optional">optional</span></h2>
+      <h2>Step 3 — AI-powered parsing <span class="optional">optional</span></h2>
       <p class="hint">
-        Leave this blank to use the built-in rule-based parser (no API key needed).
-        Fill it in to let an LLM extract and write your content — much more accurate,
-        especially for enrichment notes.
+        Leave off to use the built-in rule-based parser (no API key needed).
+        Enable to let an LLM extract and enrich your content — much more accurate,
+        especially for complex resume layouts.
       </p>
 
       <div class="ai-toggle">
@@ -164,8 +142,8 @@
             </select>
           </div>
           <div class="field">
-            <label for="ai-model">Model <span class="required-star">*</span> <span class="field-note">e.g. claude-opus-4-7 or gpt-4o</span></label>
-            <input type="text" id="ai-model" placeholder="claude-opus-4-7" />
+            <label for="ai-model">Model <span class="required-star">*</span> <span class="field-note">e.g. claude-sonnet-4-6 or gpt-4o</span></label>
+            <input type="text" id="ai-model" placeholder="claude-sonnet-4-6" />
             <span id="ai-model-error" class="field-error-msg hidden"></span>
           </div>
           <div class="field full">
@@ -179,12 +157,28 @@
           It is never stored or logged. Install the relevant SDK first:
           <code>pip install anthropic</code> or <code>pip install openai</code>.
         </p>
+
+        <div style="margin-top:1.2rem;">
+          <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem;">
+            Additional context <span class="field-note">tell the AI anything your resume doesn't cover</span>
+          </label>
+          <textarea id="enrichment" rows="8" placeholder="Examples:
+— Just started as Staff Engineer at Acme Corp in Jan 2025
+— Built an internal LLM tool using Claude + MCP that cut incident triage time by 40%
+— Added Terraform and Kubernetes to my stack this year
+— Got AWS Solutions Architect cert last month: https://credly.com/badges/...
+— Tagline: Building data pipelines at petabyte scale"></textarea>
+          <p class="merge-note" style="margin-top:0.5rem;">
+            Paste anything here — new roles, recent projects, certifications with links, accomplishments.
+            The AI merges this with your resume rather than replacing it.
+          </p>
+        </div>
       </div>
     </section>
 
-    <!-- Step 5: Generate -->
+    <!-- Step 4: Generate -->
     <section class="step">
-      <h2>Step 5 — Generate</h2>
+      <h2>Step 4 — Generate</h2>
       <p class="hint">
         Produces a <code>data.js</code> and a ready-to-deploy portfolio ZIP.
         After deploying, just edit <code>data.js</code> and push — CI/CD keeps everything in sync.
