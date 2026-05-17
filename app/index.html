@@ -15,40 +15,39 @@
 
   <main>
 
-    <!-- Step 1: Choose input method -->
+    <!-- Step 1: Resume -->
     <section class="step">
-      <h2>Step 1 — How do you want to start?</h2>
-      <div class="tab-bar">
-        <button class="tab active" data-tab="upload">Upload Resume PDF</button>
-        <button class="tab" data-tab="paste">Paste Raw Content</button>
-        <button class="tab" data-tab="scratch">Start from Scratch</button>
-      </div>
-
-      <!-- Upload PDF -->
-      <div id="tab-upload" class="tab-content active">
-        <p class="hint">We'll extract your details automatically. You can correct anything on the next step.</p>
-        <label for="resume-file" class="file-label">
-          <span id="file-name">Choose a PDF resume…</span>
-          <input type="file" id="resume-file" accept=".pdf" />
-        </label>
-      </div>
-
-      <!-- Paste raw content -->
-      <div id="tab-paste" class="tab-content">
-        <p class="hint">Paste your resume text, LinkedIn about section, or any raw content. We'll parse what we can.</p>
-        <textarea id="raw-content" rows="12" placeholder="Paste your resume or LinkedIn content here…"></textarea>
-      </div>
-
-      <!-- From scratch -->
-      <div id="tab-scratch" class="tab-content">
-        <p class="hint">Fill in your details directly. Leave anything blank and update it in <code>data.js</code> later.</p>
-      </div>
+      <h2>Step 1 — Upload your resume <span class="optional">optional</span></h2>
+      <p class="hint">We'll extract your existing experience, skills, education, and certifications. Don't worry if it's out of date — you'll enrich it in the next step.</p>
+      <label for="resume-file" class="file-label">
+        <span id="file-name">Choose a PDF resume…</span>
+        <input type="file" id="resume-file" accept=".pdf" />
+      </label>
     </section>
 
-    <!-- Step 2: Review & fill in details -->
+    <!-- Step 2: Enrich -->
     <section class="step">
-      <h2>Step 2 — Review &amp; fill in your details</h2>
-      <p class="hint">These fields populate <code>data.js</code> — the single source of truth for your portfolio, resume, and README.</p>
+      <h2>Step 2 — Add anything that's not in the resume <span class="optional">optional</span></h2>
+      <p class="hint">
+        Paste anything here — recent projects, a new role that started last month, skills you've picked up, accomplishments worth adding, even a rough bullet list.
+        This enriches the resume data rather than replacing it. We'll merge it intelligently.
+      </p>
+      <textarea id="enrichment" rows="10" placeholder="Examples:
+— Just started as Staff Engineer at Acme Corp in Jan 2025
+— Built an internal LLM tool using Claude + MCP that cut incident triage time by 40%
+— Added Terraform and Kubernetes to my stack this year
+— Got AWS Solutions Architect cert last month: https://credly.com/badges/...
+— Spoke at DataEngConf 2025 on real-time pipeline design"></textarea>
+      <p class="merge-note">
+        Enrichment text takes precedence over the resume for fields that overlap (e.g. current role, recent skills).
+        Older structured data from the PDF is kept where no enrichment is provided.
+      </p>
+    </section>
+
+    <!-- Step 3: Review details -->
+    <section class="step">
+      <h2>Step 3 — Review &amp; correct</h2>
+      <p class="hint">Pre-filled from your resume where possible. Override anything here — these always take precedence.</p>
 
       <div class="field-grid">
         <div class="field full">
@@ -76,33 +75,31 @@
           <input type="url" id="github" placeholder="https://github.com/..." />
         </div>
         <div class="field full">
-          <label for="tagline1">Tagline 1 <span class="field-note">(bold, hero section)</span></label>
+          <label for="tagline1">Tagline 1 <span class="field-note">bold, hero section</span></label>
           <input type="text" id="tagline1" placeholder="Transforming Raw Data into Competitive Advantage." />
         </div>
         <div class="field full">
-          <label for="tagline2">Tagline 2 <span class="field-note">(italic, hero section)</span></label>
+          <label for="tagline2">Tagline 2 <span class="field-note">italic, hero section</span></label>
           <input type="text" id="tagline2" placeholder="Designing data systems that scale." />
         </div>
         <div class="field full">
-          <label for="summary">Summary / About</label>
-          <textarea id="summary" rows="5" placeholder="Data engineer with X years of experience…"></textarea>
+          <label for="summary">Summary / About <span class="field-note">leave blank to use what's in the resume</span></label>
+          <textarea id="summary" rows="4" placeholder="Data engineer with X years of experience…"></textarea>
         </div>
         <div class="field full">
-          <label for="hero-badges">Hero Skill Badges <span class="field-note">(comma-separated)</span></label>
-          <input type="text" id="hero-badges" placeholder="Apache Spark, Kafka, AWS, Python…" />
+          <label for="hero-badges">Hero Skill Badges <span class="field-note">comma-separated, shown prominently on the portfolio</span></label>
+          <input type="text" id="hero-badges" placeholder="Apache Spark, Kafka, AWS, Python, Airflow…" />
         </div>
       </div>
-
-      <p class="hint" style="margin-top:1.2rem;">
-        Experience, skills, projects, and certifications are pre-populated from your resume where possible.
-        You can refine everything by editing <code>data.js</code> directly after downloading.
-      </p>
     </section>
 
-    <!-- Step 3: Generate -->
+    <!-- Step 4: Generate -->
     <section class="step">
-      <h2>Step 3 — Generate your portfolio repo</h2>
-      <p class="hint">Downloads a ZIP with everything — portfolio site, resume template, CI/CD workflows, and your <code>data.js</code>. Push to GitHub and enable Pages. Done.</p>
+      <h2>Step 4 — Generate</h2>
+      <p class="hint">
+        Produces a <code>data.js</code> and a ready-to-deploy portfolio ZIP.
+        After deploying, just edit <code>data.js</code> and push — CI/CD keeps everything in sync.
+      </p>
       <button type="button" id="generate-btn" onclick="generate()">Generate Portfolio →</button>
     </section>
 
@@ -117,16 +114,11 @@
         <ol>
           <li>Unzip the downloaded file</li>
           <li>Create a GitHub repo named <code>&lt;yourusername&gt;.github.io</code></li>
-          <li>
-            Push:
-            <code>git init &amp;&amp; git remote add origin &lt;repo-url&gt; &amp;&amp; git add . &amp;&amp; git commit -m "Initial portfolio" &amp;&amp; git push -u origin main</code>
-          </li>
+          <li>Push: <code>git init &amp;&amp; git remote add origin &lt;repo-url&gt; &amp;&amp; git add . &amp;&amp; git commit -m "Initial portfolio" &amp;&amp; git push -u origin main</code></li>
           <li>GitHub repo → Settings → Pages → Source: main → Save</li>
-          <li>Live at <code>https://&lt;yourusername&gt;.github.io</code></li>
+          <li>Live at <code>https://&lt;yourusername&gt;.github.io</code> in ~60 seconds</li>
         </ol>
-        <p class="hint" style="margin-top:0.8rem;">
-          After that, just edit <code>data.js</code> and push — CI/CD handles the rest.
-        </p>
+        <p class="hint" style="margin-top:0.8rem;">After that, just edit <code>data.js</code> and push — CI/CD handles the rest.</p>
       </details>
     </div>
 

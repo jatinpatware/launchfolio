@@ -105,7 +105,8 @@ def create_app():
 
     @app.post("/api/generate")
     def generate():
-        from parse_resume import parse, parse_raw
+        from parse_resume import parse
+        from enrich import merge
 
         overrides = {k: request.form.get(k, "") for k in
                      ["name", "title", "email", "location", "linkedin", "github",
@@ -114,19 +115,20 @@ def create_app():
         overrides["heroBadges"] = [b.strip() for b in hero_badges_raw.split(",") if b.strip()]
 
         resume_file = request.files.get("resume")
-        raw_content = request.form.get("raw_content", "").strip()
+        enrichment  = request.form.get("enrichment", "").strip()
 
         tmp_path = None
         try:
+            # 1. Parse resume if provided, otherwise start with empty base
             if resume_file and resume_file.filename:
                 tmp_path = f"/tmp/launchfolio_resume_{os.getpid()}.pdf"
                 resume_file.save(tmp_path)
-                data = parse(tmp_path, overrides)
-            elif raw_content:
-                data = parse_raw(raw_content, overrides)
+                base_data = parse(tmp_path)
             else:
-                # Scratch — just use the form overrides with empty defaults
-                data = parse_raw("", overrides)
+                base_data = {}
+
+            # 2. Merge enrichment text on top of base, then apply explicit overrides
+            data = merge(base_data, enrichment, overrides)
 
             zip_bytes = build_zip(data)
             return send_file(

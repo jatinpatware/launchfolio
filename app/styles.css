@@ -49,33 +49,29 @@ main { max-width: 720px; margin: 0 auto; }
   margin-bottom: 1.2rem;
 }
 
-/* ── Tabs ── */
-.tab-bar {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.4rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
-}
-
-.tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
+/* ── Optional badge ── */
+.optional {
+  font-size: 0.7rem;
+  font-weight: 400;
   color: var(--muted);
-  font-size: 0.88rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-  margin-bottom: -1px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.1rem 0.5rem;
+  vertical-align: middle;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.tab:hover  { color: var(--white); }
-.tab.active { color: var(--teal); border-bottom-color: var(--teal); }
-
-.tab-content         { display: none; }
-.tab-content.active  { display: block; }
+/* ── Merge note ── */
+.merge-note {
+  margin-top: 0.8rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-left: 2px solid var(--teal);
+  padding-left: 0.8rem;
+  opacity: 0.8;
+}
 
 /* ── File upload ── */
 .file-label {
