@@ -21,11 +21,11 @@ for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo   Python: %%v
 
 :: 2. Install dependencies
 echo   Installing dependencies...
-pip install -r backend\requirements.txt --quiet
+pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r backend\requirements.txt --quiet
 if errorlevel 1 (
   echo.
   echo   pip failed. Trying python -m pip...
-  python -m pip install -r backend\requirements.txt --quiet
+  python -m pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r backend\requirements.txt --quiet
 )
 
 echo   Dependencies installed.

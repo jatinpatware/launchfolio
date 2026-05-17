@@ -22,7 +22,8 @@ echo "  Python: $PYTHON_VERSION"
 
 # 2. Install dependencies
 echo "  Installing dependencies..."
-pip3 install -r backend/requirements.txt --quiet
+pip3 install --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+  -r backend/requirements.txt --quiet
 
 echo "  Dependencies installed."
 echo ""
