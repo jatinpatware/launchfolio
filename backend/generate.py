@@ -82,13 +82,15 @@ def build_zip(data: dict) -> bytes:
     """Build a ZIP of the full portfolio from template + generated data.js."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # Copy all template files
+        # Copy all template files except data.js (always use generated version)
         for path in TEMPLATE_DIR.rglob("*"):
             if path.is_file():
                 arcname = path.relative_to(TEMPLATE_DIR)
+                if str(arcname) == "data.js":
+                    continue
                 zf.write(path, arcname)
 
-        # Overwrite data.js with generated content
+        # Write generated data.js
         zf.writestr("data.js", _render_data_js(data))
 
     return buf.getvalue()
@@ -107,6 +109,26 @@ def create_app():
     @app.get("/")
     def index():
         return send_from_directory(app_dir, "index.html")
+
+    @app.post("/api/parse")
+    def parse_resume_endpoint():
+        """Parse a resume PDF and return structured JSON for form auto-fill."""
+        from parse_resume import parse, _extract_text
+
+        resume_file = request.files.get("resume")
+        if not resume_file or not resume_file.filename:
+            return {"error": "No file provided"}, 400
+
+        tmp_path = f"/tmp/launchfolio_parse_{os.getpid()}.pdf"
+        try:
+            resume_file.save(tmp_path)
+            data = parse(tmp_path)
+            return data
+        except Exception as e:
+            return {"error": str(e)}, 500
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
     @app.post("/api/generate")
     def generate():

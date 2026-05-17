@@ -1,9 +1,48 @@
-// ── File upload label ─────────────────────────────────────────────────────────
-document.getElementById('resume-file').addEventListener('change', (e) => {
+// ── File upload — label + auto-parse ─────────────────────────────────────────
+document.getElementById('resume-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
   const label = document.getElementById('file-name');
-  if (e.target.files.length) {
-    label.textContent = e.target.files[0].name;
-    label.classList.add('selected');
+  label.textContent = file.name;
+  label.classList.add('selected');
+
+  // Auto-parse: send to backend and fill empty form fields
+  label.textContent = file.name + '  — parsing…';
+  try {
+    const fd = new FormData();
+    fd.append('resume', file);
+    const res = await fetch('/api/parse', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    // Fill a field only if it is currently empty
+    const fillIf = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim() && val) {
+        el.value = val;
+        el.dispatchEvent(new Event('input')); // trigger validation refresh
+      }
+    };
+
+    fillIf('name',     data.name);
+    fillIf('title',    data.title);
+    fillIf('email',    data.email);
+    fillIf('location', data.location);
+    fillIf('linkedin', data.linkedin);
+    fillIf('github',   data.github);
+    fillIf('tagline1', data.tagline1);
+    fillIf('tagline2', data.tagline2);
+    fillIf('summary',  data.summary);
+
+    if (!document.getElementById('hero-badges').value.trim() && data.heroBadges?.length) {
+      document.getElementById('hero-badges').value = data.heroBadges.join(', ');
+    }
+
+    label.textContent = file.name + '  ✓ fields auto-filled';
+    refreshButton();
+  } catch (err) {
+    label.textContent = file.name + '  (could not parse — fill fields manually)';
   }
 });
 
