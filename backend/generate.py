@@ -97,11 +97,16 @@ def build_zip(data: dict) -> bytes:
 # ── Flask server ──────────────────────────────────────────────────────────────
 
 def create_app():
-    from flask import Flask, request, send_file
+    from flask import Flask, request, send_file, send_from_directory
     from flask_cors import CORS
 
-    app = Flask(__name__)
+    app_dir = Path(__file__).parent.parent / "app"
+    app = Flask(__name__, static_folder=str(app_dir), static_url_path="")
     CORS(app)
+
+    @app.get("/")
+    def index():
+        return send_from_directory(app_dir, "index.html")
 
     @app.post("/api/generate")
     def generate():
@@ -162,15 +167,17 @@ def create_app():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LaunchFolio CLI generator")
-    parser.add_argument("--resume", required=True, help="Path to PDF resume")
+    parser.add_argument("--resume", help="Path to PDF resume (CLI mode)")
     parser.add_argument("--output", default="./my-portfolio", help="Output directory")
-    parser.add_argument("--serve", action="store_true", help="Start Flask dev server instead")
+    parser.add_argument("--serve", action="store_true", help="Start Flask dev server")
     args = parser.parse_args()
 
     if args.serve:
         app = create_app()
-        print("LaunchFolio dev server running at http://localhost:5000")
+        print("LaunchFolio running at http://localhost:5000")
         app.run(debug=True, port=5000)
+    elif not args.resume:
+        parser.error("--resume is required when not using --serve")
     else:
         data = parse(args.resume)
         zip_bytes = build_zip(data)
