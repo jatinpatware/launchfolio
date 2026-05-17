@@ -29,6 +29,26 @@ if errorlevel 1 (
 )
 
 echo   Dependencies installed.
+
+:: 3. Optional: Ollama (free local AI — no API key needed)
+echo.
+echo   -----------------------------------------
+echo   Optional: Ollama (free local AI, no API key needed)
+echo.
+where ollama >nul 2>&1
+if %errorlevel%==0 (
+  echo   Ollama is already installed and ready to use.
+) else (
+  echo   Ollama lets you run AI parsing 100%% locally with no API key.
+  echo.
+  echo   To install on Windows:
+  echo     1. Go to https://ollama.com/download
+  echo     2. Download and run the Windows installer
+  echo     3. Open a new Command Prompt and run: ollama pull llama3.2
+  echo.
+  echo   Then rerun this setup — it will detect Ollama automatically.
+)
+
 echo.
 echo   -----------------------------------------
 echo   Starting LaunchFolio at http://localhost:5000
@@ -36,6 +56,6 @@ echo   Press Ctrl+C to stop.
 echo   -----------------------------------------
 echo.
 
-:: 3. Start the server
+:: 4. Start the server
 python backend\generate.py --serve
 pause

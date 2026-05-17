@@ -133,6 +133,25 @@
       </div>
 
       <div id="ai-fields" class="hidden" style="margin-top:1.2rem;">
+
+        <div class="ollama-tip">
+          <strong>No API key?</strong> Use <strong>Ollama</strong> — free, runs on your machine, no account needed.
+          <details style="margin-top:0.5rem;">
+            <summary>Install Ollama (takes ~2 min)</summary>
+            <ol style="margin:0.6rem 0 0 1rem;padding:0;line-height:1.8;">
+              <li><strong>Mac/Linux</strong> — run in Terminal:<br>
+                <code>curl -fsSL https://ollama.com/install.sh | sh</code>
+              </li>
+              <li><strong>Windows</strong> — download installer from <code>ollama.com/download</code></li>
+              <li>Start Ollama, then pull a model:<br>
+                <code>ollama pull llama3.2</code> &nbsp;(~2 GB, recommended)<br>
+                <code>ollama pull llama3</code> &nbsp;(~4 GB, more capable)
+              </li>
+              <li>Come back here, pick <strong>Ollama — local</strong> as provider, leave API key blank, and generate.</li>
+            </ol>
+          </details>
+        </div>
+
         <div class="field-grid">
           <div class="field">
             <label for="ai-provider">Provider</label>
