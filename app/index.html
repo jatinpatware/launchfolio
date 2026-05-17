@@ -160,17 +160,16 @@
 
         <div style="margin-top:1.2rem;">
           <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem;">
-            Additional context <span class="field-note">tell the AI anything your resume doesn't cover</span>
+            Extra context <span class="field-note">optional — the AI always reads your resume PDF first</span>
           </label>
-          <textarea id="enrichment" rows="8" placeholder="Examples:
-— Just started as Staff Engineer at Acme Corp in Jan 2025
-— Built an internal LLM tool using Claude + MCP that cut incident triage time by 40%
-— Added Terraform and Kubernetes to my stack this year
-— Got AWS Solutions Architect cert last month: https://credly.com/badges/...
+          <textarea id="enrichment" rows="8" placeholder="Anything your resume doesn't cover or that's changed recently:
+— Just joined Acme Corp as Staff Engineer (Jan 2025)
+— Got AWS Solutions Architect cert: https://credly.com/badges/...
+— Added Terraform and Kubernetes to my stack
 — Tagline: Building data pipelines at petabyte scale"></textarea>
           <p class="merge-note" style="margin-top:0.5rem;">
-            Paste anything here — new roles, recent projects, certifications with links, accomplishments.
-            The AI merges this with your resume rather than replacing it.
+            The AI reads your resume PDF <strong>and</strong> this text together.
+            Anything written here takes precedence over the resume for overlapping fields.
           </p>
         </div>
       </div>
