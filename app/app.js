@@ -112,17 +112,23 @@ function validate() {
       setError(id, '');
     }
   });
-  if (isAiOn()) {
-    AI_REQUIRED.forEach(id => {
-      if (!fieldVal(id)) {
-        setError(id, 'Required when AI parsing is enabled.');
-        ok = false;
-      } else {
-        setError(id, '');
-      }
-    });
+  if (isAiOn() && apiKeyRequired()) {
+    if (!fieldVal('ai-api-key')) {
+      setError('ai-api-key', 'Required when AI parsing is enabled.');
+      ok = false;
+    } else {
+      setError('ai-api-key', '');
+    }
   }
   return ok;
+}
+
+function currentProvider() {
+  return document.getElementById('ai-provider').value;
+}
+
+function apiKeyRequired() {
+  return currentProvider() !== 'ollama';
 }
 
 function refreshButton() {
@@ -130,7 +136,8 @@ function refreshButton() {
   const nameOk     = !!fieldVal('name');
   const titleOk    = !!fieldVal('title');
   const tagline1Ok = !!fieldVal('tagline1');
-  const aiOk       = !isAiOn() || (!!fieldVal('ai-model') && !!fieldVal('ai-api-key'));
+  const apiOk      = !apiKeyRequired() || !!fieldVal('ai-api-key');
+  const aiOk       = !isAiOn() || apiOk;
   btn.disabled = !(nameOk && titleOk && tagline1Ok && aiOk);
 }
 
@@ -154,7 +161,18 @@ function toggleAI(enabled) {
 }
 
 document.getElementById('ai-provider').addEventListener('change', e => {
-  populateModels(e.target.value);
+  const provider = e.target.value;
+  populateModels(provider);
+  const isOllama = provider === 'ollama';
+  const keyField  = document.getElementById('ai-api-key');
+  const keyLabel  = document.querySelector('label[for="ai-api-key"]');
+  keyField.placeholder  = isOllama ? 'not required — Ollama runs locally' : 'sk-ant-…';
+  keyField.style.opacity = isOllama ? '0.4' : '1';
+  if (keyLabel) {
+    keyLabel.querySelector('.required-star').style.display = isOllama ? 'none' : '';
+  }
+  if (isOllama) setError('ai-api-key', '');
+  refreshButton();
 });
 
 // Populate models on initial load
