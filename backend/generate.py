@@ -105,8 +105,10 @@ def create_app():
 
     @app.post("/api/generate")
     def generate():
-        from parse_resume import parse
+        from parse_resume import parse, _extract_text
         from enrich import merge
+        from llm import is_ai_enabled
+        from parse_ai import parse_with_ai
 
         overrides = {k: request.form.get(k, "") for k in
                      ["name", "title", "email", "location", "linkedin", "github",
@@ -117,18 +119,30 @@ def create_app():
         resume_file = request.files.get("resume")
         enrichment  = request.form.get("enrichment", "").strip()
 
+        # AI config — optional, from form fields
+        ai_config = {
+            "provider": request.form.get("ai_provider", "anthropic").lower(),
+            "model":    request.form.get("ai_model", "").strip(),
+            "api_key":  request.form.get("ai_api_key", "").strip(),
+        }
+
         tmp_path = None
         try:
-            # 1. Parse resume if provided, otherwise start with empty base
             if resume_file and resume_file.filename:
                 tmp_path = f"/tmp/launchfolio_resume_{os.getpid()}.pdf"
                 resume_file.save(tmp_path)
-                base_data = parse(tmp_path)
-            else:
-                base_data = {}
 
-            # 2. Merge enrichment text on top of base, then apply explicit overrides
-            data = merge(base_data, enrichment, overrides)
+            if is_ai_enabled(ai_config):
+                # ── AI path: one LLM call handles parse + merge ──────────
+                resume_text = _extract_text(tmp_path) if tmp_path else ""
+                data = parse_with_ai(resume_text, enrichment, ai_config)
+                # Still apply explicit form overrides on top
+                from enrich import _apply_overrides
+                data = _apply_overrides(data, overrides)
+            else:
+                # ── Non-AI path: regex parse + rule-based merge ──────────
+                base_data = parse(tmp_path) if tmp_path else {}
+                data = merge(base_data, enrichment, overrides)
 
             zip_bytes = build_zip(data)
             return send_file(

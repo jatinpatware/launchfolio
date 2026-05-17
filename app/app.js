@@ -6,6 +6,11 @@ document.getElementById('resume-file').addEventListener('change', (e) => {
   }
 });
 
+function toggleAI(enabled) {
+  document.getElementById('ai-fields').classList.toggle('hidden', !enabled);
+  document.getElementById('ai-label').textContent = enabled ? 'AI parsing enabled' : 'Use AI parsing';
+}
+
 async function generate() {
   const btn = document.getElementById('generate-btn');
   btn.textContent = 'Generating…';
@@ -22,6 +27,13 @@ async function generate() {
     formData.append(id, document.getElementById(id).value);
   });
   formData.append('hero_badges', document.getElementById('hero-badges').value);
+
+  // AI fields — only sent if toggle is on
+  if (document.getElementById('ai-enabled').checked) {
+    formData.append('ai_provider', document.getElementById('ai-provider').value);
+    formData.append('ai_model',    document.getElementById('ai-model').value);
+    formData.append('ai_api_key',  document.getElementById('ai-api-key').value);
+  }
 
   try {
     const res = await fetch('/api/generate', { method: 'POST', body: formData });

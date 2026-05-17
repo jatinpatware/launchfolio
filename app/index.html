@@ -93,9 +93,52 @@
       </div>
     </section>
 
-    <!-- Step 4: Generate -->
+    <!-- Step 4: AI (optional) -->
     <section class="step">
-      <h2>Step 4 — Generate</h2>
+      <h2>Step 4 — AI-powered parsing <span class="optional">optional</span></h2>
+      <p class="hint">
+        Leave this blank to use the built-in rule-based parser (no API key needed).
+        Fill it in to let an LLM extract and write your content — much more accurate,
+        especially for enrichment notes.
+      </p>
+
+      <div class="ai-toggle">
+        <label class="switch">
+          <input type="checkbox" id="ai-enabled" onchange="toggleAI(this.checked)" />
+          <span class="slider"></span>
+        </label>
+        <span id="ai-label">Use AI parsing</span>
+      </div>
+
+      <div id="ai-fields" class="hidden" style="margin-top:1.2rem;">
+        <div class="field-grid">
+          <div class="field">
+            <label for="ai-provider">Provider</label>
+            <select id="ai-provider">
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ai-model">Model <span class="field-note">e.g. claude-opus-4-7 or gpt-4o</span></label>
+            <input type="text" id="ai-model" placeholder="claude-opus-4-7" />
+          </div>
+          <div class="field full">
+            <label for="ai-api-key">API Key <span class="field-note">not stored — sent only to your chosen provider</span></label>
+            <input type="password" id="ai-api-key" placeholder="sk-ant-..." autocomplete="off" />
+          </div>
+        </div>
+        <p class="merge-note">
+          Your API key is sent directly from your browser to the backend running locally.
+          It is never stored or logged. Install the relevant SDK first:
+          <code>pip install anthropic</code> or <code>pip install openai</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Step 5: Generate -->
+    <section class="step">
+      <h2>Step 5 — Generate</h2>
       <p class="hint">
         Produces a <code>data.js</code> and a ready-to-deploy portfolio ZIP.
         After deploying, just edit <code>data.js</code> and push — CI/CD keeps everything in sync.

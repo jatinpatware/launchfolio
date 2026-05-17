@@ -1,3 +1,7 @@
 pdfplumber>=0.10.0
 flask>=3.0.0
 flask-cors>=4.0.0
+
+# AI parsing — install the one matching your chosen provider (both optional)
+# anthropic>=0.40.0
+# openai>=1.40.0
