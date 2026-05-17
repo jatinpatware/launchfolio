@@ -136,6 +136,18 @@ def _parse_enrichment(text: str, base: dict) -> dict:
     if len(lines) == 1 and len(full_text) > 80:
         result["summary"] = full_text
 
+    # CGPA / GPA mentions — update education entries
+    cgpa_re = re.compile(r'(?:cgpa|gpa)\s*(?:is|was|:|=)?\s*([0-9]+(?:\.[0-9]+)?)', re.IGNORECASE)
+    cgpa_matches = cgpa_re.findall(text)
+    if cgpa_matches and base.get("education"):
+        edu = list(base["education"])
+        # Assign CGPAs in order they appear (first match → first edu entry, etc.)
+        for i, cgpa_val in enumerate(cgpa_matches):
+            if i < len(edu):
+                edu[i] = dict(edu[i])
+                edu[i]["cgpa"] = cgpa_val
+        result["education"] = edu
+
     return result
 
 

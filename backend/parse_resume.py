@@ -39,8 +39,11 @@ def _split_sections(text: str) -> dict[str, str]:
     Returns dict: {section_name: section_text}
     """
     section_re = re.compile(
-        r"^(SUMMARY|EXPERIENCE|WORK EXPERIENCE|SKILLS|TECHNICAL SKILLS|"
-        r"EDUCATION|CERTIFICATIONS|PROJECTS|ACHIEVEMENTS?)\s*$",
+        r"^(SUMMARY|PROFESSIONAL SUMMARY|EXPERIENCE|WORK EXPERIENCE|PROFESSIONAL EXPERIENCE|WORK HISTORY|"
+        r"SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|"
+        r"EDUCATION|ACADEMIC BACKGROUND|"
+        r"CERTIFICATIONS?|LICENSES? & CERTIFICATIONS?|"
+        r"PROJECTS|ACHIEVEMENTS?|ACCOMPLISHMENTS?)\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
     matches = list(section_re.finditer(text))
@@ -101,7 +104,7 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
         "summary":  sections.get("SUMMARY", ""),
         "focus":    [],
         "skills":   _parse_skills(sections.get("SKILLS", sections.get("TECHNICAL SKILLS", ""))),
-        "experience": [],   # TODO: structured experience parsing
+        "experience": _parse_experience(sections.get("EXPERIENCE", sections.get("WORK EXPERIENCE", sections.get("PROFESSIONAL EXPERIENCE", sections.get("WORK HISTORY", ""))))),
         "certifications": _parse_certifications(sections.get("CERTIFICATIONS", "")),
         "projects": [],
         "education": _parse_education(sections.get("EDUCATION", "")),
@@ -109,6 +112,112 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
     }
 
     return data
+
+
+def _parse_experience(text: str) -> list[dict]:
+    """
+    Heuristic experience parser. Handles common resume formats:
+    - Company on one line with dates, title on next line
+    - Title | Company | Dates
+    - Bullets starting with - or •
+    """
+    if not text.strip():
+        return []
+
+    date_re = re.compile(
+        r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|'
+        r'June|July|August|September|October|November|December)\s+\d{4}'
+        r'|\d{4}\s*[-–—]\s*(\d{4}|Present|Current|Now)',
+        re.IGNORECASE
+    )
+    bullet_re = re.compile(r'^[-•*·]\s+(.+)')
+
+    lines = [l.rstrip() for l in text.splitlines()]
+    entries = []
+    current_company = None
+    current_roles = []
+    current_role = None
+
+    def flush_role():
+        nonlocal current_role
+        if current_role and current_company is not None:
+            current_roles.append(current_role)
+            current_role = None
+
+    def flush_company():
+        nonlocal current_company, current_roles
+        if current_company is not None and current_roles:
+            entries.append({
+                "company": current_company,
+                "companyDesc": "",
+                "period": current_roles[0].get("period", ""),
+                "roles": current_roles,
+            })
+        current_company = None
+        current_roles = []
+
+    for line in lines:
+        if not line.strip():
+            continue
+
+        bullet_m = bullet_re.match(line.strip())
+        has_date = bool(date_re.search(line))
+
+        if bullet_m:
+            if current_role:
+                current_role["bullets"].append(bullet_m.group(1).strip())
+            continue
+
+        # Line with a date — likely a role/company line
+        if has_date:
+            # Extract date range
+            period_m = re.search(
+                r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|'
+                r'\d{4})\s*[-–—]\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|'
+                r'\d{4}|Present|Current|Now)',
+                line, re.IGNORECASE
+            )
+            period = period_m.group(0).strip() if period_m else ""
+            title_part = date_re.sub('', line).strip().strip('|-').strip()
+
+            if current_company is None:
+                # First date line — this is company + date or title + date
+                flush_role()
+                current_company = title_part or "Unknown Company"
+                current_role = {"title": "", "period": period, "stack": "", "bullets": []}
+            else:
+                # Subsequent date line — new role at same or new company
+                flush_role()
+                if title_part and title_part.lower() not in current_company.lower():
+                    # Looks like a new company
+                    if len(entries) > 0 or current_roles:
+                        flush_company()
+                        current_company = title_part
+                current_role = {"title": title_part, "period": period, "stack": "", "bullets": []}
+        elif line.strip().lower().startswith("stack:") or line.strip().lower().startswith("tech:"):
+            if current_role:
+                current_role["stack"] = re.sub(r'^(stack|tech)\s*:\s*', '', line.strip(), flags=re.IGNORECASE)
+        else:
+            # No date, no bullet — could be title or company name
+            if current_role is not None and not current_role["title"]:
+                current_role["title"] = line.strip()
+            elif current_role is not None and current_role["bullets"]:
+                # After bullets, a plain line might be a new role title
+                flush_role()
+                current_role = {"title": line.strip(), "period": "", "stack": "", "bullets": []}
+            elif current_company is None:
+                current_company = line.strip()
+
+    flush_role()
+    flush_company()
+
+    # Clean up: if role title is empty and company isn't, use company as title
+    for entry in entries:
+        for role in entry["roles"]:
+            if not role["title"]:
+                role["title"] = entry["company"]
+
+    return entries
 
 
 def _parse_skills(text: str) -> list[dict]:

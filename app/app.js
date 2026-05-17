@@ -48,7 +48,7 @@ document.getElementById('resume-file').addEventListener('change', async (e) => {
 
 // ── Validation helpers ────────────────────────────────────────────────────────
 
-const REQUIRED = ['name', 'title'];
+const REQUIRED = ['name', 'title', 'tagline1'];
 const AI_REQUIRED = ['ai-model', 'ai-api-key'];
 
 function isAiOn() {
@@ -96,10 +96,11 @@ function validate() {
 
 function refreshButton() {
   const btn = document.getElementById('generate-btn');
-  const nameOk  = !!fieldVal('name');
-  const titleOk = !!fieldVal('title');
-  const aiOk    = !isAiOn() || (!!fieldVal('ai-model') && !!fieldVal('ai-api-key'));
-  btn.disabled = !(nameOk && titleOk && aiOk);
+  const nameOk     = !!fieldVal('name');
+  const titleOk    = !!fieldVal('title');
+  const tagline1Ok = !!fieldVal('tagline1');
+  const aiOk       = !isAiOn() || (!!fieldVal('ai-model') && !!fieldVal('ai-api-key'));
+  btn.disabled = !(nameOk && titleOk && tagline1Ok && aiOk);
 }
 
 // ── Wire up live validation ───────────────────────────────────────────────────

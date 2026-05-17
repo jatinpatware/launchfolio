@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "launchfolio",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["backend/generate.py", "--serve"],
+      "port": 5000
+    }
+  ]
+}

@@ -3,6 +3,13 @@
 function render() {
   const d = resumeData;
 
+  // Dynamic page title
+  document.title = d.name ? `${d.name} — ${d.title}` : 'Portfolio';
+
+  // Nav logo — generated from name initials
+  const initials = d.name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??';
+  document.querySelector('.nav-logo').textContent = initials;
+
   // Hero
   document.getElementById('hero-name').textContent = d.name;
   document.getElementById('hero-title').textContent = d.title;
@@ -16,15 +23,13 @@ function render() {
 
   document.getElementById('hero-links').innerHTML = `
     <a href="#about" class="btn-primary">See My Work</a>
-    <a href="resume/Jatin_Patware_Senior_Data_Engineer.pdf" target="_blank" class="btn-secondary">Download Resume</a>
+    <a href="resume/resume_print.html" target="_blank" class="btn-secondary">Download Resume</a>
   `;
 
   // About
-  document.getElementById('about-text').innerHTML = `
-    <p>I design data systems that hold up at scale — 8+ years of doing it across petabyte-scale pipelines, real-time Kafka streams, and AI/LLM integration into data workflows.</p>
-    <p>At <strong>Fanatics</strong>, one of the world's largest licensed sports merchandise platforms, I own the Kafka Streams pipeline and canonical data layer for real-time order processing. Before that, <strong>Fractal Analytics</strong> and <strong>MAQ Software</strong>.</p>
-    <p>I'm equally comfortable whiteboarding a data mesh architecture, reviewing an engineer's design, or digging into a pipeline bottleneck.</p>
-  `;
+  document.getElementById('about-text').innerHTML = d.summary
+    ? d.summary.split('\n').filter(l => l.trim()).map(p => `<p>${p.trim()}</p>`).join('')
+    : '<p>Add your summary in the enrichment step or edit <code>data.js</code> after downloading.</p>';
 
   document.getElementById('focus-list').innerHTML = d.focus
     .map(f => `<li>${f}</li>`).join('');
@@ -111,26 +116,18 @@ function render() {
         }
       </div>
     `).join('') +
-    `<a href="${d.credly}" target="_blank" class="cert-credly-link">View all badges on Credly →</a>`;
+    (d.credly ? `<a href="${d.credly}" target="_blank" class="cert-credly-link">View all badges on Credly →</a>` : '');
 
   // Contact
-  document.getElementById('contact-links').innerHTML = `
-    <a href="mailto:${d.email}" class="contact-card">
-      <span class="contact-icon">✉️</span><span>${d.email}</span>
-    </a>
-    <a href="${d.linkedin}" target="_blank" class="contact-card">
-      <span class="contact-icon">💼</span><span>LinkedIn</span>
-    </a>
-    <a href="${d.github}" target="_blank" class="contact-card">
-      <span class="contact-icon">🐙</span><span>GitHub</span>
-    </a>
-    <a href="https://leetcode.com/u/j1p1" target="_blank" class="contact-card">
-      <span class="contact-icon">💡</span><span>LeetCode</span>
-    </a>
-    <a href="https://hackerrank.com/profile/jatin_mits" target="_blank" class="contact-card">
-      <span class="contact-icon">⭐</span><span>HackerRank</span>
-    </a>
-  `;
+  const contactLinks = [
+    d.email    && `<a href="mailto:${d.email}" class="contact-card"><span class="contact-icon">✉️</span><span>${d.email}</span></a>`,
+    d.linkedin && `<a href="${d.linkedin}" target="_blank" class="contact-card"><span class="contact-icon">💼</span><span>LinkedIn</span></a>`,
+    d.github   && `<a href="${d.github}" target="_blank" class="contact-card"><span class="contact-icon">🐙</span><span>GitHub</span></a>`,
+    d.credly   && `<a href="${d.credly}" target="_blank" class="contact-card"><span class="contact-icon">🏅</span><span>Credly</span></a>`,
+  ].filter(Boolean);
+  document.getElementById('contact-links').innerHTML = contactLinks.length
+    ? contactLinks.join('')
+    : '<p style="color:var(--muted)">Add your contact details in data.js</p>';
 }
 
 render();
