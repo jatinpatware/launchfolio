@@ -1,7 +1,16 @@
-pdfplumber>=0.10.0
-flask>=3.0.0
-flask-cors>=4.0.0
+# LaunchFolio — Python dependencies
+# Install with: pip3 install -r requirements.txt
 
-# AI parsing — install the one matching your chosen provider (both optional)
-# anthropic>=0.40.0
-# openai>=1.40.0
+# Core — required for the app to run
+pdfplumber>=0.10.0        # PDF text extraction
+flask>=3.0.0              # Web server
+flask-cors>=4.0.0         # Cross-origin support
+
+# AI parsing — optional, install the one matching your provider
+# Leave uninstalled to use the built-in rule-based parser instead.
+#
+# Anthropic (Claude):
+#   pip3 install anthropic
+#
+# OpenAI (GPT-4o):
+#   pip3 install openai

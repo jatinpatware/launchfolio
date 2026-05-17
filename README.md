@@ -1,105 +1,134 @@
 # LaunchFolio
 
-> Your personal professional presence repo. One place to maintain everything.
+**Upload your resume → get a deployable portfolio in 60 seconds.**
 
-Fork this repo, fill in your details once — your portfolio site, resume, and README stay in sync automatically from that point forward.
-
-No separate resume file. No outdated portfolio. No manual syncing. One source of truth, forever.
+LaunchFolio reads your PDF resume, auto-fills a form, and generates a ready-to-deploy ZIP containing your portfolio site, resume page, and README — all driven by a single config file (`data.js`). Update that one file and everything stays in sync.
 
 ---
 
-## The problem
+## Quick start
 
-Maintaining a professional presence across multiple formats is tedious:
+**Mac / Linux**
+```bash
+git clone https://github.com/<your-username>/launchfolio.git
+cd launchfolio
+bash setup.sh
+# → opens at http://localhost:5000
+```
 
-- Update experience on LinkedIn → forget to update the resume
-- Update the resume → forget to update the portfolio
-- Update the portfolio → README is still the old version
-- PDF resume is six months stale
+**Windows**
+```
+Double-click setup.bat
+# → opens at http://localhost:5000
+```
 
-Every format drifts. You end up with four different versions of your own career.
-
-## How LaunchFolio solves it
-
-Everything lives in a single config file — `data.js`. When you change it:
-
-- The **portfolio site** re-renders automatically on next page load
-- A **GitHub Action** regenerates `README.md` and commits it
-- The **resume HTML** is driven by the same file — regenerate a PDF in one command
-- Every format stays in sync, always
-
-You maintain one thing. Everything else follows.
+Open the browser form, upload your resume PDF, fill in any extras, pick a colour theme, and click **Generate Portfolio**. Download the ZIP, push it to GitHub, enable Pages — done.
 
 ---
 
-## Getting started
+## What you get
 
-### 1. Fork or use this template
+The generated portfolio includes:
+
+| Section | What it shows |
+|---------|--------------|
+| Hero | Name, title, taglines, skill badges |
+| About | Summary + what you focus on |
+| Experience | Timeline with role cards, stack tags, bullet points |
+| Skills | Category-grouped skill chips |
+| Projects | Cards for professional and open-source work |
+| Education & Certifications | Degree cards with CGPA, cert list with verification links |
+| Highlights | Custom extras — accomplishments, awards, soft skills, languages, etc. |
+| Contact | Links to email, LinkedIn, GitHub, Twitter, LeetCode, HackerRank, Credly |
+
+Five colour themes: Ocean (default), Midnight, Forest, Ember, Rose.
+
+---
+
+## How it works
+
+Everything lives in `data.js`:
 
 ```
-GitHub → Use this template → Create a new repository
-Name it: <yourusername>.github.io
+data.js  ← single source of truth — edit only this file after setup
+│
+├── index.html + js/main.js       → portfolio site (renders from data.js)
+├── resume/resume_print.html      → printable resume (renders from data.js)
+├── scripts/generate_readme.js    → auto-generates README.md
+└── .github/workflows/
+    ├── deploy.yml                → deploys site to GitHub Pages on push
+    └── generate-readme.yml       → regenerates README when data.js changes
 ```
 
-### 2. Bootstrap your config
+---
 
-Three ways to populate your initial `data.js`:
+## After setup — updating your portfolio
 
-**a) Upload a resume PDF** (recommended for first-timers)
+Edit `data.js` only. That's the rule.
+
 ```bash
-cd backend
-pip install -r requirements.txt
-python generate.py --resume your_resume.pdf --output ../
-# Overwrites data.js with your parsed content
-```
-
-**b) Use the web form** (fill in details manually or paste raw content)
-```bash
-python generate.py --serve
-# Open http://localhost:5000
-```
-
-**c) Edit `data.js` directly** (if you're comfortable with a text file)
-```bash
-# Open data.js and fill in your details — comments guide you through each field
-```
-
-### 3. Enable GitHub Pages
-
-```bash
+# Change any field in data.js, then:
 git add data.js
-git commit -m "Add my details"
+git commit -m "Update portfolio"
 git push
-# GitHub repo → Settings → Pages → Source: main → Save
-```
-
-Your portfolio is live at `https://<yourusername>.github.io` in ~60 seconds.
-
----
-
-## Day-to-day updates
-
-Changed jobs? Got a new cert? Updated a project?
-
-**Edit `data.js` only.** That's the rule.
-
-```
-Edit data.js → git commit → git push
-                                │
-                    ┌───────────┴───────────┐
-                    ▼                       ▼
-            Portfolio site          GitHub Action runs
-            re-renders              → regenerates README.md
-            on next load            → commits automatically
+# GitHub Pages redeploys automatically
 ```
 
 To regenerate the PDF resume after updating:
+
+**Mac:**
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu \
   --print-to-pdf="resume/Resume.pdf" \
   "file://$(pwd)/resume/resume_print.html"
-git add resume/Resume.pdf && git commit -m "Update resume PDF"
+```
+
+**Windows (PowerShell):**
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --headless --disable-gpu `
+  --print-to-pdf="resume\Resume.pdf" `
+  "file:///$((Get-Location).Path.Replace('\','/'))/resume/resume_print.html"
+```
+
+---
+
+## Custom sections (Accomplishments, Awards, Soft Skills, etc.)
+
+Add any custom section to `data.js` under `extras`:
+
+```js
+extras: [
+  { title: "Accomplishments", type: "list", items: [
+      "AIR-1518 in GATE 2016",
+      "Led hackathon project adopted into production"
+  ]},
+  { title: "Soft Skills", type: "tags", items: [
+      "Mentorship", "System Thinking", "Technical Communication"
+  ]},
+]
+```
+
+`type: "list"` renders as bullet points. `type: "tags"` renders as pill chips.  
+These appear automatically in the portfolio and the resume print view.
+
+---
+
+## AI parsing (optional)
+
+Toggle **Use AI parsing** in the form and enter your API key for a much more accurate parse — especially useful for non-standard resume layouts.
+
+Supported providers:
+- **Anthropic** — `claude-sonnet-4-6` or `claude-opus-4-7`  
+  Get a key at https://console.anthropic.com
+- **OpenAI** — `gpt-4o` or `gpt-4o-mini`  
+  Get a key at https://platform.openai.com
+
+Install the matching package before using:
+```bash
+pip3 install anthropic   # for Anthropic
+pip3 install openai      # for OpenAI
 ```
 
 ---
@@ -107,67 +136,36 @@ git add resume/Resume.pdf && git commit -m "Update resume PDF"
 ## Architecture
 
 ```
-data.js                          ← Single source of truth — edit this only
-│
-├── index.html + js/main.js      → Portfolio site (rendered dynamically)
-├── resume/resume_print.html     → Print-to-PDF resume template
-├── scripts/generate_readme.js   → Generates README.md from data.js
-└── .github/workflows/
-    ├── deploy.yml               → Auto-deploys site to GitHub Pages on push
-    └── generate-readme.yml      → Auto-regenerates README on data.js change
+launchfolio/
+├── setup.sh / setup.bat     ← run this first (installs deps + starts server)
+├── backend/
+│   ├── generate.py          Flask server + ZIP builder + CLI
+│   ├── parse_resume.py      PDF → structured data (rule-based)
+│   ├── parse_ai.py          PDF → structured data (LLM-powered)
+│   ├── enrich.py            Merges enrichment text + form overrides
+│   └── requirements.txt     Python dependencies
+├── app/
+│   ├── index.html           Web form UI
+│   ├── app.js               Form logic, validation, theme picker
+│   └── styles.css           Form styles
+└── template/                Generated into every portfolio ZIP
+    ├── data.js              Blank config — populated by the generator
+    ├── index.html           Portfolio site shell
+    ├── css/styles.css       Portfolio styles
+    ├── js/main.js           Portfolio renderer (reads data.js)
+    ├── theme.css            Generated colour theme overrides
+    └── resume/
+        └── resume_print.html  Printable resume (reads data.js)
 ```
-
-```
-bootstrap/                       ← One-time setup tools (not deployed)
-├── app/                         Web form UI — upload PDF or paste raw content
-└── backend/
-    ├── parse_resume.py          Extracts structured data from PDF
-    ├── generate.py              Populates data.js from parsed data (CLI + Flask)
-    └── models.py                Data schema matching data.js structure
-```
-
----
-
-## What the portfolio includes
-
-- Hero section with name, title, taglines, skill badges, and CTAs
-- Experience timeline with role cards, stack tags, and bullet points
-- Skills grid grouped by category
-- Projects section (professional + open source)
-- Education and certifications (with verification links)
-- Contact section
-- Auto-generated README matching all of the above
-
-All sections driven by `data.js`. Add a field once, it appears everywhere.
-
----
-
-## Roadmap
-
-- [x] Portfolio template (single source of truth, CI/CD)
-- [x] Resume HTML template (renders from data.js)
-- [x] Auto README generation via GitHub Action
-- [ ] Resume PDF parser (pdfplumber — in progress)
-- [ ] Web form UI (upload PDF or paste raw content)
-- [ ] data.js generator from parsed resume
-- [ ] DOCX resume output
-- [ ] Multi-template support (light theme, minimal layout)
-
----
-
-## AI assistant friendly
-
-This repo ships with `HOWTO.md` explaining the architecture. Any AI coding assistant (Claude, GitHub Copilot, Cursor, etc.) that reads it will know to edit only `data.js` and let CI/CD handle the rest.
 
 ---
 
 ## Contributing
 
-PRs welcome. The most valuable contributions:
-
+PRs welcome. Highest-value contributions:
 - Better resume parsing (resumes vary wildly in format)
-- Additional portfolio templates
-- DOCX output from data.js
+- Additional portfolio templates / themes
+- DOCX resume output
 
 ---
 

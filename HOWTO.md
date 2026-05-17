@@ -1,82 +1,70 @@
-# How to Use LaunchFolio
+# LaunchFolio — How to Use
 
 ---
 
-## Step 0 — Prerequisites
+## Quickest start
 
-You need Python 3 and pip installed. Follow the steps for your operating system.
+**Mac / Linux** — one command does everything:
+```bash
+bash setup.sh
+```
 
-### Check if Python is already installed
+**Windows** — double-click `setup.bat`
 
-Open **Terminal** (Mac/Linux) or **Command Prompt** (Windows) and run:
+Both scripts check for Python, install dependencies, and start the server.  
+Then open **http://localhost:5000** in your browser.
 
+> Keep the Terminal/Command Prompt window open while using the app — closing it stops the server.
+
+---
+
+## Manual setup (step by step)
+
+### Step 0 — Install Python 3
+
+Check if you already have it:
 ```bash
 python3 --version
 ```
 
-If you see something like `Python 3.11.4`, skip to **Step 0b**. If you get "command not found", install Python first.
+If you see `Python 3.x.x`, skip to Step 1. If not:
 
-### Step 0a — Install Python (if not installed)
+**Mac:** Download from https://www.python.org/downloads/ and run the `.pkg` installer.
 
-**Mac:**
-1. Go to https://www.python.org/downloads/
-2. Click **Download Python 3.x.x**
-3. Open the downloaded `.pkg` file and follow the installer
-4. After install, run `python3 --version` to confirm it worked
-
-**Windows:**
-1. Go to https://www.python.org/downloads/
-2. Click **Download Python 3.x.x**
-3. Run the installer — **tick "Add Python to PATH"** before clicking Install
-4. After install, open a new Command Prompt and run `python --version`
+**Windows:** Download from https://www.python.org/downloads/ — tick **"Add Python to PATH"** during install, then open a new Command Prompt.
 
 **Linux (Ubuntu/Debian):**
 ```bash
-sudo apt update
-sudo apt install python3 python3-pip
-```
-
-### Step 0b — Check pip is available
-
-```bash
-pip3 --version
-```
-
-If you see a version number, you're ready. If not:
-
-**Mac/Linux:**
-```bash
-python3 -m ensurepip --upgrade
-```
-
-**Windows:**
-```bash
-python -m ensurepip --upgrade
+sudo apt update && sudo apt install python3 python3-pip
 ```
 
 ---
 
-## Step 1 — Download LaunchFolio
+### Step 1 — Get LaunchFolio
 
-**Option A — with Git:**
+**With Git:**
 ```bash
-git clone https://github.com/jatinpatware/launchfolio.git
+git clone https://github.com/<your-username>/launchfolio.git
 cd launchfolio
 ```
 
-**Option B — without Git:**
-1. Go to https://github.com/jatinpatware/launchfolio
-2. Click **Code → Download ZIP**
-3. Unzip it — you'll get a folder called `launchfolio-main`
-4. Open Terminal in that folder (Mac: drag folder onto Terminal icon; Windows: Shift+right-click → "Open PowerShell window here")
+**Without Git:**
+1. Download the ZIP from GitHub → **Code → Download ZIP**
+2. Unzip it and open a Terminal inside the folder  
+   (Mac: drag folder onto Terminal; Windows: Shift+right-click → "Open PowerShell here")
 
 ---
 
-## Step 2 — Install dependencies
+### Step 2 — Install dependencies
 
 ```bash
 cd backend
 pip3 install -r requirements.txt
+```
+
+If `pip3` isn't found, try `pip`:
+```bash
+pip install -r requirements.txt
 ```
 
 If you get an SSL error on Mac:
@@ -84,17 +72,24 @@ If you get an SSL error on Mac:
 pip3 install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 ```
 
-If the command `pip3` isn't found, try `pip` instead:
+**AI parsing (optional)** — only needed if you want AI-powered parsing:
 ```bash
-pip install -r requirements.txt
+pip3 install anthropic    # for Anthropic / Claude
+pip3 install openai       # for OpenAI / GPT-4o
 ```
 
 ---
 
-## Step 3 — Start the server
+### Step 3 — Start the server
 
+From the `backend/` folder:
 ```bash
 python3 generate.py --serve
+```
+
+Or from the project root:
+```bash
+python3 backend/generate.py --serve
 ```
 
 You should see:
@@ -102,41 +97,70 @@ You should see:
 LaunchFolio running at http://localhost:5000
 ```
 
-Now open your browser and go to: **http://localhost:5000**
-
-> Keep this Terminal window open while you use the app — closing it stops the server.
+Open **http://localhost:5000** in your browser.
 
 ---
 
 ## Step 4 — Generate your portfolio
 
-In the browser form:
+Fill in the form:
 
-1. **Upload your resume PDF** (optional but recommended — the parser reads it to pre-fill fields)
-2. **Paste any enrichment text** — things your old resume doesn't cover: new roles, new projects, new skills, certifications with links. Plain text is fine.
-3. **Review and correct fields** — name, title, email, LinkedIn, etc. These override the PDF parse.
-4. **AI parsing (optional)** — toggle on, pick Anthropic or OpenAI, paste your API key. Leave off to use the built-in rule-based parser.
-5. Click **Generate Portfolio**
-6. **Download the ZIP**
+**Upload your resume PDF** (optional but recommended)  
+The parser reads it and auto-fills the form fields. For best results, export directly from LinkedIn:  
+`LinkedIn → Me → View Profile → More → Save to PDF`
+
+**Enrichment text** (optional, recommended for non-AI mode)  
+Paste anything your resume doesn't fully cover: new roles, new projects, certifications with links, or custom sections like accomplishments and awards. Plain English is fine.
+
+Example enrichment text:
+```
+Tagline: Building scalable data pipelines at petabyte scale
+Focus: Data Architecture, Apache Spark, AWS, LLM Integration
+
+Accomplishments:
+- AIR-1518 in GATE 2016 (Computer Science)
+- Led a hackathon project adopted into production within 3 months
+
+Soft Skills: Mentorship, System Thinking, Technical Communication
+
+CGPA is 8.55 for M.Tech, CGPA is 7.8 for B.E.
+```
+
+**Review and correct fields**  
+Name, title, email, LinkedIn URL, GitHub, taglines, and contact links. These always override what the PDF parse finds.
+
+**Optional contact fields**  
+Phone, Twitter/X, LeetCode, HackerRank, Credly, and Portfolio URL — fill in whichever apply.
+
+**Hero badges**  
+Short skill keywords shown in the hero section, comma-separated. Example: `Apache Spark, AWS, Python, Kafka`
+
+**Colour theme**  
+Pick one of five themes: Ocean (dark blue), Midnight (indigo), Forest (green), Ember (orange), Rose (red-pink).
+
+**AI parsing (optional)**  
+Toggle on, select your provider (Anthropic or OpenAI), and paste your API key. AI mode gives a much more accurate parse — especially for complex or non-standard resume layouts. Leave off to use the built-in rule-based parser.
+
+Click **Generate Portfolio**, then **Download ZIP**.
 
 ---
 
-## Step 5 — Deploy to GitHub Pages
+## Step 5 — Deploy to GitHub Pages (free)
 
-### 5a — Create a GitHub account (if you don't have one)
-Go to https://github.com and sign up for free.
+### 5a — Create a GitHub account
+Go to https://github.com and sign up for free if you don't have one.
 
 ### 5b — Create a repository
 1. Click **+** → **New repository**
 2. Name it exactly: `<your-username>.github.io`  
-   Example: if your username is `johndoe`, name it `johndoe.github.io`
-3. Set it to **Public**
+   Example: for username `johndoe`, name it `johndoe.github.io`
+3. Set visibility to **Public**
 4. Leave "Initialize with README" **unticked**
 5. Click **Create repository**
 
 ### 5c — Unzip and push
 
-**Mac/Linux:**
+**Mac / Linux:**
 ```bash
 unzip launchfolio-portfolio.zip -d my-portfolio
 cd my-portfolio
@@ -160,61 +184,87 @@ git remote add origin https://github.com/<your-username>/<your-username>.github.
 git push -u origin main
 ```
 
-> Replace `<your-username>` with your actual GitHub username in the remote URL above.
+Replace `<your-username>` with your actual GitHub username.
 
 ### 5d — Enable GitHub Pages
-1. Go to your repo on GitHub
-2. Click **Settings** → **Pages**
-3. Under "Source", select **Deploy from a branch**
-4. Choose branch: `main`, folder: `/ (root)`
-5. Click **Save**
+1. Go to your repo on GitHub → **Settings → Pages**
+2. Under "Source", select **Deploy from a branch**
+3. Branch: `main`, folder: `/ (root)`
+4. Click **Save**
 
-Your portfolio will be live at **https://\<your-username\>.github.io** within about 60 seconds.
+Your portfolio is live at **https://\<your-username\>.github.io** within ~60 seconds.
 
 ---
 
 ## Updating your portfolio later
 
-All your data lives in `data.js` inside your portfolio repo.
-
-1. Edit `data.js` — change any field you want
-2. Save, commit, and push:
+All your data lives in `data.js` inside your portfolio repo. Edit only that file.
 
 ```bash
+# Edit data.js with any text editor, then:
 git add data.js
 git commit -m "Update portfolio"
 git push
 ```
 
-3. GitHub automatically redeploys the site and regenerates `README.md`
+GitHub Pages redeploys automatically. Your README is also regenerated by a GitHub Action.
 
-> Never edit `index.html`, `README.md`, or `resume/resume_print.html` directly — they are auto-generated.
+### Adding custom sections (Accomplishments, Awards, Soft Skills, etc.)
 
-### Regenerate the PDF resume (optional)
+Open `data.js` and edit the `extras` array:
 
-After updating `data.js`, regenerate your PDF resume with Chrome:
+```js
+extras: [
+  {
+    title: "Accomplishments",
+    type: "list",        // renders as bullet points
+    items: [
+      "AIR-1518 in GATE 2016 (top 0.1% nationally)",
+      "Led hackathon project adopted into production"
+    ]
+  },
+  {
+    title: "Soft Skills",
+    type: "tags",        // renders as pill chips
+    items: ["Mentorship", "System Thinking", "Technical Communication"]
+  },
+  {
+    title: "Languages",
+    type: "tags",
+    items: ["English (Fluent)", "Hindi (Native)"]
+  }
+]
+```
+
+These appear as a "Highlights" section on the portfolio site and as additional sections in the resume print view.
+
+### Regenerate the PDF resume
+
+After editing `data.js`, regenerate your PDF resume using Chrome:
 
 **Mac:**
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu \
-  --print-to-pdf="resume/YourName_Resume.pdf" \
+  --print-to-pdf="resume/Resume.pdf" \
   "file://$(pwd)/resume/resume_print.html"
+git add resume/Resume.pdf && git commit -m "Update resume PDF"
 ```
 
 **Windows (PowerShell):**
 ```powershell
 & "C:\Program Files\Google\Chrome\Application\chrome.exe" `
   --headless --disable-gpu `
-  --print-to-pdf="resume\YourName_Resume.pdf" `
+  --print-to-pdf="resume\Resume.pdf" `
   "file:///$((Get-Location).Path.Replace('\','/'))/resume/resume_print.html"
+git add resume\Resume.pdf && git commit -m "Update resume PDF"
 ```
 
 ---
 
 ## Stopping the server
 
-Go back to the Terminal where the server is running and press `Ctrl + C`.
+Go back to the Terminal and press `Ctrl + C`.
 
 ---
 
@@ -222,10 +272,12 @@ Go back to the Terminal where the server is running and press `Ctrl + C`.
 
 | Problem | Fix |
 |---------|-----|
-| `python3: command not found` | Install Python from python.org (see Step 0a) |
-| `pip3: command not found` | Try `pip` instead of `pip3`, or run `python3 -m pip` |
+| `python3: command not found` | Install Python from python.org — see Step 0 |
+| `pip3: command not found` | Try `pip` instead, or run `python3 -m pip install -r requirements.txt` |
 | SSL error during pip install | Add `--trusted-host pypi.org --trusted-host files.pythonhosted.org` |
-| Port 5000 already in use | Another app is using that port — run `python3 generate.py --serve` again after a restart |
-| Browser says "This site can't be reached" | Make sure the server is still running in Terminal |
-| Generated portfolio shows wrong data | Check the form fields in Step 4 — the form overrides always win over the PDF parse |
-| Git push asks for username/password | Use a Personal Access Token instead of your password — see https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token |
+| Port 5000 already in use | Close the other app using port 5000, or restart your computer and try again |
+| Browser says "can't be reached" | The server stopped — run the start command again |
+| Portfolio shows wrong data | Form fields always override the PDF parse — check what you typed in the form |
+| Experience section is empty | Switch to AI parsing mode for better accuracy on complex resume layouts |
+| Git push asks for a password | Use a Personal Access Token — see https://docs.github.com/en/authentication |
+| Windows: `bash` not found | Use `setup.bat` instead of `setup.sh`, or install Git Bash |
