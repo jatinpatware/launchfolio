@@ -200,6 +200,7 @@ def create_app():
                 tmp_path = f"/tmp/launchfolio_aiparse_{os.getpid()}.pdf"
                 resume_file.save(tmp_path)
             resume_text = _extract_text(tmp_path) if tmp_path else ""
+            # Returns {data, score, issues} — frontend drives retries
             result = parse_with_ai(resume_text, enrichment, ai_config)
             return result
         except Exception as e:
@@ -246,7 +247,8 @@ def create_app():
                 data = _apply_overrides(data, overrides)
             elif is_ai_enabled(ai_config):
                 resume_text = _extract_text(tmp_path) if tmp_path else ""
-                data = parse_with_ai(resume_text, enrichment, ai_config)
+                result = parse_with_ai(resume_text, enrichment, ai_config)
+                data = result.get("data", result)  # unwrap {data, score, issues} envelope
                 from enrich import _apply_overrides
                 data = _apply_overrides(data, overrides)
             else:

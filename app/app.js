@@ -305,9 +305,8 @@ async function generate() {
       const model    = document.getElementById('ai-model').value;
       const apiKey   = document.getElementById('ai-api-key').value;
 
-      // Phase 1: call AI parse, show output
+      // Phase 1: call AI parse with eval/retry loop (up to 3 attempts, keep best)
       showAiPanel();
-      setAiStatus(`Contacting ${provider} (${model}) — this may take a moment...`);
       btn.textContent = 'Asking AI...';
 
       const aiForm = new FormData();
@@ -317,18 +316,57 @@ async function generate() {
       aiForm.append('ai_model',    model);
       aiForm.append('ai_api_key',  apiKey);
 
-      const aiRes = await fetch('/api/ai-parse', { method: 'POST', body: aiForm });
-      const aiText = await aiRes.text();
-      if (!aiRes.ok) {
-        // Show raw error in the panel so it's copyable
-        document.getElementById('ai-output-json').textContent = aiText;
-        document.getElementById('ai-output-actions').classList.remove('hidden');
-        throw new Error(aiText);
-      }
-      preparsedJson = JSON.parse(aiText);
+      const MAX_ATTEMPTS = 3;
+      const PASSING_SCORE = 80;
+      let bestResult = null;
+      let bestScore  = -1;
+      let lastErr    = null;
 
-      showAiJson(preparsedJson);
-      setAiStatus('AI parsing complete. Building portfolio ZIP...');
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        setAiStatus(
+          `Attempt ${attempt}/${MAX_ATTEMPTS} — contacting ${provider} (${model})…`
+        );
+        try {
+          const aiRes  = await fetch('/api/ai-parse', { method: 'POST', body: aiForm });
+          const aiText = await aiRes.text();
+          if (!aiRes.ok) {
+            document.getElementById('ai-output-json').textContent = aiText;
+            document.getElementById('ai-output-actions').classList.remove('hidden');
+            throw new Error(aiText);
+          }
+          const envelope = JSON.parse(aiText);
+          const { data, score, issues } = envelope;
+
+          const issueStr = issues && issues.length ? ` — ${issues.join(', ')}` : '';
+          setAiStatus(
+            `Attempt ${attempt}/${MAX_ATTEMPTS}: score ${score}/100${issueStr}`
+          );
+
+          if (score > bestScore) {
+            bestScore  = score;
+            bestResult = data;
+            showAiJson(data);
+          }
+
+          lastErr = null;
+          if (score >= PASSING_SCORE) break;
+
+          if (attempt < MAX_ATTEMPTS) {
+            setAiStatus(
+              `Attempt ${attempt}/${MAX_ATTEMPTS}: score ${score}/100${issueStr} — retrying for better result…`
+            );
+          }
+        } catch (err) {
+          lastErr = err;
+          if (attempt === MAX_ATTEMPTS) throw err;
+          setAiStatus(`Attempt ${attempt}/${MAX_ATTEMPTS} failed — retrying…`);
+        }
+      }
+
+      if (!bestResult) throw lastErr || new Error('AI returned no usable data');
+      preparsedJson = bestResult;
+
+      setAiStatus(`Best score: ${bestScore}/100. AI parsing complete. Building portfolio ZIP…`);
       btn.textContent = 'Building ZIP...';
     } else {
       btn.textContent = 'Generating...';
