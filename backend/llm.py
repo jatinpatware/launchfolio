@@ -14,6 +14,9 @@ import json
 
 
 def is_ai_enabled(config: dict) -> bool:
+    provider = config.get("provider", "").lower()
+    if provider == "ollama":
+        return bool(config.get("model"))
     return bool(config.get("api_key") and config.get("model"))
 
 
@@ -24,14 +27,25 @@ def call_llm(prompt: str, config: dict) -> str:
     """
     provider = config.get("provider", "anthropic").lower()
     model    = config["model"]
-    api_key  = config["api_key"]
+    api_key  = config.get("api_key", "")
 
     if provider == "anthropic":
         return _call_anthropic(prompt, model, api_key)
     elif provider == "openai":
-        return _call_openai(prompt, model, api_key)
+        return _call_openai_compat(prompt, model, api_key, "https://api.openai.com/v1")
+    elif provider == "google":
+        return _call_google(prompt, model, api_key)
+    elif provider == "deepseek":
+        return _call_openai_compat(prompt, model, api_key, "https://api.deepseek.com")
+    elif provider == "groq":
+        return _call_openai_compat(prompt, model, api_key, "https://api.groq.com/openai/v1")
+    elif provider == "ollama":
+        return _call_openai_compat(prompt, model, api_key or "ollama", "http://localhost:11434/v1")
     else:
-        raise ValueError(f"Unknown provider '{provider}'. Supported: anthropic, openai")
+        raise ValueError(
+            f"Unknown provider '{provider}'. "
+            f"Supported: anthropic, openai, google, deepseek, groq, ollama"
+        )
 
 
 def _call_anthropic(prompt: str, model: str, api_key: str) -> str:
@@ -49,19 +63,32 @@ def _call_anthropic(prompt: str, model: str, api_key: str) -> str:
     return message.content[0].text
 
 
-def _call_openai(prompt: str, model: str, api_key: str) -> str:
+def _call_openai_compat(prompt: str, model: str, api_key: str, base_url: str) -> str:
+    """OpenAI-compatible chat completions endpoint (OpenAI, DeepSeek, Groq, Ollama)."""
     try:
         import openai
     except ImportError:
         raise ImportError("Run: pip install openai")
 
-    client = openai.OpenAI(api_key=api_key)
+    client = openai.OpenAI(api_key=api_key, base_url=base_url)
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=4096,
     )
     return response.choices[0].message.content
+
+
+def _call_google(prompt: str, model: str, api_key: str) -> str:
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        raise ImportError("Run: pip install google-generativeai")
+
+    genai.configure(api_key=api_key)
+    m = genai.GenerativeModel(model)
+    response = m.generate_content(prompt)
+    return response.text
 
 
 def extract_json(text: str) -> dict:

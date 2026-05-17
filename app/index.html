@@ -136,9 +136,13 @@
         <div class="field-grid">
           <div class="field">
             <label for="ai-provider">Provider</label>
-            <select id="ai-provider">
+            <select id="ai-provider" onchange="onProviderChange(this.value)">
               <option value="anthropic">Anthropic (Claude)</option>
               <option value="openai">OpenAI</option>
+              <option value="google">Google (Gemini)</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="groq">Groq</option>
+              <option value="ollama">Ollama — local</option>
             </select>
           </div>
           <div class="field">
@@ -151,10 +155,9 @@
             <span id="ai-api-key-error" class="field-error-msg hidden"></span>
           </div>
         </div>
-        <p class="merge-note">
+        <p class="merge-note" id="provider-install-note">
           Your API key is sent directly from your browser to the backend running locally.
-          It is never stored or logged. Install the relevant SDK first:
-          <code>pip install anthropic</code> or <code>pip install openai</code>.
+          It is never stored or logged.
         </p>
 
         <div style="margin-top:1.2rem;">

@@ -232,10 +232,12 @@ def _parse_experience_piped(text: str) -> list[dict]:
         leading_space = raw and raw[0] in (' ', '\t')
 
         if bm:
-            role["bullets"].append(bm.group(1).strip())
+            for b in _split_run_on_bullets(bm.group(1).strip()):
+                role["bullets"].append(b)
         elif leading_space:
-            # Leading whitespace = new bullet in this format
-            role["bullets"].append(stripped)
+            # Leading whitespace = new bullet in this format; may be run-on
+            for b in _split_run_on_bullets(stripped):
+                role["bullets"].append(b)
         elif role["bullets"]:
             # No leading space, no bullet char = continuation of last bullet
             role["bullets"][-1] = role["bullets"][-1].rstrip() + ' ' + stripped
@@ -328,6 +330,18 @@ def _parse_projects(text: str) -> list[dict]:
 
     flush()
     return projects
+
+
+def _split_run_on_bullets(line: str) -> list[str]:
+    """
+    Split a long line where PDF extraction merged multiple bullets into one.
+    Splits on period + 2+ spaces + capital letter (e.g. "Did X.  Did Y.  Did Z.")
+    Returns the original line as a single-element list if no split point found.
+    """
+    if len(line) < 100 or not re.search(r'\.\s{2,}[A-Z]', line):
+        return [line]
+    parts = re.split(r'(?<=\.)\s{2,}(?=[A-Z])', line)
+    return [p.strip() for p in parts if p.strip()]
 
 
 def _parse_experience(text: str) -> list[dict]:
@@ -432,7 +446,8 @@ def _parse_experience(text: str) -> list[dict]:
             if current_role is None and current_company:
                 current_role = {"title": "", "period": "", "stack": "", "bullets": []}
             if current_role is not None:
-                current_role["bullets"].append(bullet_m.group(1).strip())
+                for b in _split_run_on_bullets(bullet_m.group(1).strip()):
+                    current_role["bullets"].append(b)
             i += 1
             continue
 
@@ -471,6 +486,12 @@ def _parse_experience(text: str) -> list[dict]:
 
         # Plain text — company name, job title, or description
         if current_role is not None and current_role.get("bullets"):
+            # Long run-on line in bullet context = more bullets (PDF merging artefact)
+            if len(line) > 100 and re.search(r'\.\s{2,}[A-Z]', line):
+                for b in _split_run_on_bullets(line):
+                    current_role["bullets"].append(b)
+                i += 1
+                continue
             # Currently in bullets, plain line = new company starts
             flush_company()
             current_company = line
