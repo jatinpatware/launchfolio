@@ -45,8 +45,20 @@ def _find_twitter(text: str) -> str:
     m = re.search(r'(?:twitter\.com|x\.com)/[\w]+', text, re.IGNORECASE)
     return f"https://{m.group(0)}" if m else ""
 
+def _find_leetcode(text: str) -> str:
+    m = re.search(r'leetcode\.com/(?:u/)?[\w-]+', text, re.IGNORECASE)
+    return f"https://{m.group(0)}" if m else ""
+
+def _find_hackerrank(text: str) -> str:
+    m = re.search(r'hackerrank\.com/(?:profile/)?[\w-]+', text, re.IGNORECASE)
+    return f"https://{m.group(0)}" if m else ""
+
+def _find_credly(text: str) -> str:
+    m = re.search(r'credly\.com/users/[\w/-]+', text, re.IGNORECASE)
+    return f"https://{m.group(0)}" if m else ""
+
 def _find_portfolio(text: str) -> str:
-    m = re.search(r'https?://(?!linkedin|github|twitter|x\.com|credly|certmetrics)[\w.-]+\.(?:io|com|dev|me|net)/[\w/.-]*', text)
+    m = re.search(r'https?://(?!linkedin|github|twitter|x\.com|credly|leetcode|hackerrank|certmetrics)[\w.-]+\.(?:io|com|dev|me|net)/[\w/.-]*', text)
     return m.group(0) if m else ""
 
 
@@ -120,10 +132,10 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
         "github":    overrides.get("github") or _find_github(text),
         "phone":     overrides.get("phone") or _find_phone(text),
         "twitter":   overrides.get("twitter") or _find_twitter(text),
-        "leetcode":  overrides.get("leetcode") or "",
-        "hackerrank": overrides.get("hackerrank") or "",
+        "leetcode":  overrides.get("leetcode") or _find_leetcode(text),
+        "hackerrank": overrides.get("hackerrank") or _find_hackerrank(text),
         "portfolio": overrides.get("portfolio") or _find_portfolio(text),
-        "credly":    "",
+        "credly":    overrides.get("credly") or _find_credly(text),
         "tagline1": "",
         "tagline2": "",
         "sub":      "",

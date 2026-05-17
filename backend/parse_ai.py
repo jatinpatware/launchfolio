@@ -14,8 +14,14 @@ SCHEMA_DESCRIPTION = """
   "title": "string — current job title",
   "email": "string",
   "location": "string",
-  "linkedin": "string — full URL",
-  "github": "string — full URL",
+  "linkedin":   "string — full URL",
+  "github":     "string — full URL",
+  "twitter":    "string — full URL or empty string",
+  "leetcode":   "string — full URL or empty string",
+  "hackerrank": "string — full URL or empty string",
+  "credly":     "string — full URL or empty string",
+  "portfolio":  "string — full URL or empty string",
+  "phone":      "string or empty string",
   "tagline1": "string — bold punchy statement about their professional identity",
   "tagline2": "string — italic supporting line, e.g. 'Designing systems that scale.'",
   "sub": "string — one-liner stat summary, e.g. '8+ Years · Petabyte Scale · Real-Time Pipelines'",
@@ -49,7 +55,10 @@ SCHEMA_DESCRIPTION = """
   "education": [
     { "degree": "string", "school": "string", "period": "string", "cgpa": "string", "notes": ["strings"] }
   ],
-  "achievements": ["array of strings"]
+  "achievements": ["array of strings"],
+  "extras": [
+    { "title": "string — e.g. Accomplishments, Soft Skills, Languages", "type": "list or tags", "items": ["strings"] }
+  ]
 }
 """
 

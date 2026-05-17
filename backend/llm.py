@@ -76,9 +76,11 @@ def _call_openai_compat(prompt: str, model: str, api_key: str, base_url: str) ->
         messages=[{"role": "user", "content": prompt}],
         max_tokens=4096,
     )
-    # Force JSON output for local Ollama models (avoids markdown wrapping)
     if "11434" in base_url:
+        # Force JSON output and tune for better consistency with local models
         kwargs["response_format"] = {"type": "json_object"}
+        kwargs["temperature"] = 0.1
+        kwargs["extra_body"] = {"num_ctx": 8192}
     response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content
 
