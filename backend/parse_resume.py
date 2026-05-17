@@ -54,12 +54,19 @@ def _split_sections(text: str) -> dict[str, str]:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def parse_raw(raw_text: str, overrides: dict | None = None) -> dict:
+    """Parse from pasted raw text instead of a PDF file."""
+    return _build_data(raw_text, overrides)
+
+
 def parse(pdf_path: str, overrides: dict | None = None) -> dict:
-    """
-    Parse a PDF resume and return a dict matching the ResumeData schema.
-    `overrides` — values from the web form that take precedence over parsed values.
-    """
+    """Parse a PDF resume."""
     text = _extract_text(pdf_path)
+    return _build_data(text, overrides)
+
+
+def _build_data(text: str, overrides: dict | None = None) -> dict:
+    """Shared logic for both PDF and raw-text paths."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     sections = _split_sections(text)
     overrides = overrides or {}

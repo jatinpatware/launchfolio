@@ -105,18 +105,29 @@ def create_app():
 
     @app.post("/api/generate")
     def generate():
-        resume_file = request.files.get("resume")
-        if not resume_file:
-            return "No resume file uploaded", 400
-
-        tmp_path = f"/tmp/launchfolio_resume_{os.getpid()}.pdf"
-        resume_file.save(tmp_path)
+        from parse_resume import parse, parse_raw
 
         overrides = {k: request.form.get(k, "") for k in
-                     ["name", "title", "email", "location", "linkedin", "github"]}
+                     ["name", "title", "email", "location", "linkedin", "github",
+                      "tagline1", "tagline2", "summary"]}
+        hero_badges_raw = request.form.get("hero_badges", "")
+        overrides["heroBadges"] = [b.strip() for b in hero_badges_raw.split(",") if b.strip()]
 
+        resume_file = request.files.get("resume")
+        raw_content = request.form.get("raw_content", "").strip()
+
+        tmp_path = None
         try:
-            data = parse(tmp_path, overrides)
+            if resume_file and resume_file.filename:
+                tmp_path = f"/tmp/launchfolio_resume_{os.getpid()}.pdf"
+                resume_file.save(tmp_path)
+                data = parse(tmp_path, overrides)
+            elif raw_content:
+                data = parse_raw(raw_content, overrides)
+            else:
+                # Scratch — just use the form overrides with empty defaults
+                data = parse_raw("", overrides)
+
             zip_bytes = build_zip(data)
             return send_file(
                 io.BytesIO(zip_bytes),
@@ -125,7 +136,7 @@ def create_app():
                 download_name="launchfolio-portfolio.zip",
             )
         finally:
-            if os.path.exists(tmp_path):
+            if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
     return app

@@ -3,82 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LaunchFolio — Resume to Portfolio Generator</title>
+  <title>LaunchFolio — Setup</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
   <header>
     <h1>LaunchFolio</h1>
-    <p>Upload your resume. Get a deployed portfolio.</p>
+    <p>One config file. Portfolio, resume, and README — always in sync.</p>
   </header>
 
   <main>
-    <form id="upload-form">
 
-      <section class="step">
-        <h2>Step 1 — Upload Resume</h2>
+    <!-- Step 1: Choose input method -->
+    <section class="step">
+      <h2>Step 1 — How do you want to start?</h2>
+      <div class="tab-bar">
+        <button class="tab active" data-tab="upload">Upload Resume PDF</button>
+        <button class="tab" data-tab="paste">Paste Raw Content</button>
+        <button class="tab" data-tab="scratch">Start from Scratch</button>
+      </div>
+
+      <!-- Upload PDF -->
+      <div id="tab-upload" class="tab-content active">
+        <p class="hint">We'll extract your details automatically. You can correct anything on the next step.</p>
         <label for="resume-file" class="file-label">
           <span id="file-name">Choose a PDF resume…</span>
-          <input type="file" id="resume-file" accept=".pdf" required />
+          <input type="file" id="resume-file" accept=".pdf" />
         </label>
-      </section>
+      </div>
 
-      <section class="step">
-        <h2>Step 2 — Fill in Details</h2>
-        <p class="hint">Pre-filled from your resume where possible. Correct anything that looks wrong.</p>
+      <!-- Paste raw content -->
+      <div id="tab-paste" class="tab-content">
+        <p class="hint">Paste your resume text, LinkedIn about section, or any raw content. We'll parse what we can.</p>
+        <textarea id="raw-content" rows="12" placeholder="Paste your resume or LinkedIn content here…"></textarea>
+      </div>
 
-        <div class="field-grid">
-          <div class="field">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" placeholder="Jane Smith" />
-          </div>
-          <div class="field">
-            <label for="title">Job Title</label>
-            <input type="text" id="title" placeholder="Senior Data Engineer" />
-          </div>
-          <div class="field">
-            <label for="email">Email</label>
-            <input type="email" id="email" placeholder="jane@example.com" />
-          </div>
-          <div class="field">
-            <label for="location">Location</label>
-            <input type="text" id="location" placeholder="San Francisco, CA" />
-          </div>
-          <div class="field">
-            <label for="linkedin">LinkedIn URL</label>
-            <input type="url" id="linkedin" placeholder="https://linkedin.com/in/..." />
-          </div>
-          <div class="field">
-            <label for="github">GitHub URL</label>
-            <input type="url" id="github" placeholder="https://github.com/..." />
-          </div>
+      <!-- From scratch -->
+      <div id="tab-scratch" class="tab-content">
+        <p class="hint">Fill in your details directly. Leave anything blank and update it in <code>data.js</code> later.</p>
+      </div>
+    </section>
+
+    <!-- Step 2: Review & fill in details -->
+    <section class="step">
+      <h2>Step 2 — Review &amp; fill in your details</h2>
+      <p class="hint">These fields populate <code>data.js</code> — the single source of truth for your portfolio, resume, and README.</p>
+
+      <div class="field-grid">
+        <div class="field full">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" placeholder="Jatin Patware" />
         </div>
-      </section>
+        <div class="field full">
+          <label for="title">Job Title</label>
+          <input type="text" id="title" placeholder="Senior Data Engineer" />
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label for="location">Location</label>
+          <input type="text" id="location" placeholder="Hyderabad, India" />
+        </div>
+        <div class="field">
+          <label for="linkedin">LinkedIn URL</label>
+          <input type="url" id="linkedin" placeholder="https://linkedin.com/in/..." />
+        </div>
+        <div class="field">
+          <label for="github">GitHub URL</label>
+          <input type="url" id="github" placeholder="https://github.com/..." />
+        </div>
+        <div class="field full">
+          <label for="tagline1">Tagline 1 <span class="field-note">(bold, hero section)</span></label>
+          <input type="text" id="tagline1" placeholder="Transforming Raw Data into Competitive Advantage." />
+        </div>
+        <div class="field full">
+          <label for="tagline2">Tagline 2 <span class="field-note">(italic, hero section)</span></label>
+          <input type="text" id="tagline2" placeholder="Designing data systems that scale." />
+        </div>
+        <div class="field full">
+          <label for="summary">Summary / About</label>
+          <textarea id="summary" rows="5" placeholder="Data engineer with X years of experience…"></textarea>
+        </div>
+        <div class="field full">
+          <label for="hero-badges">Hero Skill Badges <span class="field-note">(comma-separated)</span></label>
+          <input type="text" id="hero-badges" placeholder="Apache Spark, Kafka, AWS, Python…" />
+        </div>
+      </div>
 
-      <section class="step">
-        <h2>Step 3 — Generate</h2>
-        <button type="submit" id="generate-btn">Generate Portfolio →</button>
-      </section>
+      <p class="hint" style="margin-top:1.2rem;">
+        Experience, skills, projects, and certifications are pre-populated from your resume where possible.
+        You can refine everything by editing <code>data.js</code> directly after downloading.
+      </p>
+    </section>
 
-    </form>
+    <!-- Step 3: Generate -->
+    <section class="step">
+      <h2>Step 3 — Generate your portfolio repo</h2>
+      <p class="hint">Downloads a ZIP with everything — portfolio site, resume template, CI/CD workflows, and your <code>data.js</code>. Push to GitHub and enable Pages. Done.</p>
+      <button type="button" id="generate-btn" onclick="generate()">Generate Portfolio →</button>
+    </section>
 
+    <!-- Output -->
     <div id="output" class="hidden">
       <h2>Your portfolio is ready</h2>
-      <p>Download the ZIP and follow the steps below to deploy to GitHub Pages.</p>
+      <p>Download the ZIP, push to GitHub, enable Pages. Live in 60 seconds.</p>
       <a id="download-link" class="btn-download" download="launchfolio-portfolio.zip">Download ZIP</a>
 
       <details class="deploy-steps">
-        <summary>How to deploy (60 seconds)</summary>
+        <summary>Deploy steps</summary>
         <ol>
           <li>Unzip the downloaded file</li>
-          <li>Create a new GitHub repo named <code>&lt;yourusername&gt;.github.io</code></li>
-          <li>Push the files: <code>git init &amp;&amp; git remote add origin &lt;repo-url&gt; &amp;&amp; git add . &amp;&amp; git push -u origin main</code></li>
-          <li>Go to repo Settings → Pages → Source: main → Save</li>
-          <li>Your portfolio is live at <code>https://&lt;yourusername&gt;.github.io</code></li>
+          <li>Create a GitHub repo named <code>&lt;yourusername&gt;.github.io</code></li>
+          <li>
+            Push:
+            <code>git init &amp;&amp; git remote add origin &lt;repo-url&gt; &amp;&amp; git add . &amp;&amp; git commit -m "Initial portfolio" &amp;&amp; git push -u origin main</code>
+          </li>
+          <li>GitHub repo → Settings → Pages → Source: main → Save</li>
+          <li>Live at <code>https://&lt;yourusername&gt;.github.io</code></li>
         </ol>
+        <p class="hint" style="margin-top:0.8rem;">
+          After that, just edit <code>data.js</code> and push — CI/CD handles the rest.
+        </p>
       </details>
     </div>
+
   </main>
 
   <script src="app.js"></script>

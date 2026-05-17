@@ -1,33 +1,47 @@
-// LaunchFolio — frontend handler
-// Sends resume + form data to backend, receives ZIP blob for download
+// ── Tab switching ─────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+  });
+});
 
-const form = document.getElementById('upload-form');
-const fileInput = document.getElementById('resume-file');
-const fileNameLabel = document.getElementById('file-name');
-const generateBtn = document.getElementById('generate-btn');
-const outputSection = document.getElementById('output');
-const downloadLink = document.getElementById('download-link');
-
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) {
-    fileNameLabel.textContent = fileInput.files[0].name;
-    fileNameLabel.classList.add('selected');
+document.getElementById('resume-file').addEventListener('change', (e) => {
+  const label = document.getElementById('file-name');
+  if (e.target.files.length) {
+    label.textContent = e.target.files[0].name;
+    label.classList.add('selected');
   }
 });
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  generateBtn.textContent = 'Generating…';
-  generateBtn.disabled = true;
+// ── Generate ──────────────────────────────────────────────────
+async function generate() {
+  const btn = document.getElementById('generate-btn');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
 
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
   const formData = new FormData();
-  formData.append('resume', fileInput.files[0]);
-  formData.append('name',     document.getElementById('name').value);
-  formData.append('title',    document.getElementById('title').value);
-  formData.append('email',    document.getElementById('email').value);
-  formData.append('location', document.getElementById('location').value);
-  formData.append('linkedin', document.getElementById('linkedin').value);
-  formData.append('github',   document.getElementById('github').value);
+
+  // Input method
+  if (activeTab === 'upload') {
+    const file = document.getElementById('resume-file').files[0];
+    if (!file) { alert('Please choose a PDF resume.'); btn.textContent = 'Generate Portfolio →'; btn.disabled = false; return; }
+    formData.append('resume', file);
+  } else if (activeTab === 'paste') {
+    const raw = document.getElementById('raw-content').value.trim();
+    if (!raw) { alert('Please paste some content.'); btn.textContent = 'Generate Portfolio →'; btn.disabled = false; return; }
+    formData.append('raw_content', raw);
+  }
+  // 'scratch' — form fields only, no file or raw content
+
+  // Form fields (override / supplement parsed values)
+  ['name', 'title', 'email', 'location', 'linkedin', 'github', 'tagline1', 'tagline2', 'summary'].forEach(id => {
+    formData.append(id, document.getElementById(id).value);
+  });
+  formData.append('hero_badges', document.getElementById('hero-badges').value);
 
   try {
     const res = await fetch('/api/generate', { method: 'POST', body: formData });
@@ -35,13 +49,14 @@ form.addEventListener('submit', async (e) => {
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    downloadLink.href = url;
-    outputSection.classList.remove('hidden');
-    outputSection.scrollIntoView({ behavior: 'smooth' });
+    const link = document.getElementById('download-link');
+    link.href = url;
+    document.getElementById('output').classList.remove('hidden');
+    document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    alert('Generation failed: ' + err.message);
+    alert('Generation failed: ' + err.message + '\n\nMake sure the backend server is running (python backend/generate.py --serve)');
   } finally {
-    generateBtn.textContent = 'Generate Portfolio →';
-    generateBtn.disabled = false;
+    btn.textContent = 'Generate Portfolio →';
+    btn.disabled = false;
   }
-});
+}
