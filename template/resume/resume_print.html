@@ -101,11 +101,21 @@ d.education.forEach(e => {
 });
 
 // Achievements
-document.write(`<h2>Achievements</h2><hr/><ul>`);
-d.achievements.forEach(a => {
-  document.write(`<li>${a}</li>`);
+if (d.achievements && d.achievements.length) {
+  document.write(`<h2>Achievements</h2><hr/><ul>`);
+  d.achievements.forEach(a => { document.write(`<li>${a}</li>`); });
+  document.write(`</ul>`);
+}
+
+// Extras — custom sections (Accomplishments, Awards, Soft Skills, etc.)
+(d.extras || []).forEach(ex => {
+  document.write(`<h2>${ex.title}</h2><hr/>`);
+  if (ex.type === 'tags') {
+    document.write(`<p style="font-size:10.5pt">${ex.items.join(' · ')}</p>`);
+  } else {
+    document.write(`<ul>${ex.items.map(i => `<li>${i}</li>`).join('')}</ul>`);
+  }
 });
-document.write(`</ul>`);
 </script>
 
 </body>

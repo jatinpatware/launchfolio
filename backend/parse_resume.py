@@ -61,7 +61,10 @@ def _split_sections(text: str) -> dict[str, str]:
         r"EDUCATION|ACADEMIC BACKGROUND|"
         r"CERTIFICATIONS?|LICENSES? & CERTIFICATIONS?|"
         r"PROJECTS|ACHIEVEMENTS?|ACCOMPLISHMENTS?|"
-        r"TOP SKILLS|LANGUAGES?|CONTACT)\s*$",
+        r"AWARDS?(?:\s*&\s*(?:RECOGNITION|HONORS?))?|HONORS?|REWARDS?|"
+        r"SOFT SKILLS?|INTERPERSONAL SKILLS?|"
+        r"LANGUAGES?|PUBLICATIONS?|VOLUNTEERING?|"
+        r"TOP SKILLS|CONTACT)\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
     matches = list(section_re.finditer(text))
@@ -133,9 +136,46 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
         "projects": [],
         "education": _parse_education(sections.get("EDUCATION", "")),
         "achievements": [],
+        "extras": _parse_extras(sections),
     }
 
     return data
+
+
+_EXTRAS_MAP = {
+    # section heading (uppercase) → (display title, type)
+    "ACCOMPLISHMENTS":           ("Accomplishments",        "list"),
+    "ACHIEVEMENTS":              ("Achievements",           "list"),
+    "AWARDS":                    ("Awards & Recognition",   "list"),
+    "AWARDS & RECOGNITION":      ("Awards & Recognition",   "list"),
+    "AWARDS & HONORS":           ("Awards & Honors",        "list"),
+    "HONORS":                    ("Honors",                 "list"),
+    "REWARDS":                   ("Rewards & Recognition",  "list"),
+    "SOFT SKILLS":               ("Soft Skills",            "tags"),
+    "INTERPERSONAL SKILLS":      ("Interpersonal Skills",   "tags"),
+    "LANGUAGES":                 ("Languages",              "tags"),
+    "LANGUAGE":                  ("Languages",              "tags"),
+    "PUBLICATIONS":              ("Publications",           "list"),
+    "PUBLICATION":               ("Publications",           "list"),
+    "VOLUNTEERING":              ("Volunteering",           "list"),
+}
+
+def _parse_extras(sections: dict) -> list[dict]:
+    """Build extras list from any recognised extra sections present in the resume."""
+    extras = []
+    for raw_key, text in sections.items():
+        mapping = _EXTRAS_MAP.get(raw_key.upper())
+        if not mapping or not text.strip():
+            continue
+        display_title, kind = mapping
+        items = []
+        for line in text.splitlines():
+            line = line.strip().lstrip("-•·→✦►▶*").strip()
+            if line and len(line) > 2:
+                items.append(line)
+        if items:
+            extras.append({"title": display_title, "items": items, "type": kind})
+    return extras
 
 
 def _parse_focus(full_text: str, summary: str) -> list[str]:

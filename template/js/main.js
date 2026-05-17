@@ -118,6 +118,28 @@ function render() {
     `).join('') +
     (d.credly ? `<a href="${d.credly}" target="_blank" class="cert-credly-link">View all badges on Credly →</a>` : '');
 
+  // Extras — custom additional sections (Accomplishments, Awards, Soft Skills, etc.)
+  const extras = d.extras || [];
+  if (extras.length) {
+    document.getElementById('extras').style.display = '';
+    document.getElementById('extras-grid').innerHTML = extras.map(ex => {
+      const bodyHtml = ex.type === 'tags'
+        ? `<div class="extra-tags">${ex.items.map(i => `<span class="extra-tag">${i}</span>`).join('')}</div>`
+        : `<ul class="extra-list">${ex.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+      return `<div class="extra-card"><h3>${ex.title}</h3>${bodyHtml}</div>`;
+    }).join('');
+
+    // Add nav link if not already present
+    const navLinks = document.querySelector('.nav-links');
+    if (navLinks && !navLinks.querySelector('a[href="#extras"]')) {
+      const li = document.createElement('li');
+      li.innerHTML = '<a href="#extras">Highlights</a>';
+      const contactLi = navLinks.querySelector('a[href="#contact"]')?.parentElement;
+      if (contactLi) navLinks.insertBefore(li, contactLi);
+      else navLinks.appendChild(li);
+    }
+  }
+
   // Contact — only render links that have a value
   const contactDefs = [
     { key: "email",      icon: "✉️",  label: d.email,     href: `mailto:${d.email}` },

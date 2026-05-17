@@ -76,6 +76,7 @@ def _render_data_js(data: dict) -> str:
     projects_js = json.dumps(data.get("projects", []), ensure_ascii=False, indent=4)
     education_js = json.dumps(data.get("education", []), ensure_ascii=False, indent=4)
     achievements_js = json.dumps(data.get("achievements", []), ensure_ascii=False, indent=4)
+    extras_js = json.dumps(data.get("extras", []), ensure_ascii=False, indent=4)
     hero_badges_js = json.dumps(data.get("heroBadges", []), ensure_ascii=False)
     focus_js = json.dumps(data.get("focus", []), ensure_ascii=False, indent=4)
 
@@ -117,6 +118,8 @@ const resumeData = {{
   education: {education_js},
 
   achievements: {achievements_js},
+
+  extras: {extras_js},
 }};
 """
 

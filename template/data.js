@@ -39,5 +39,10 @@ const resumeData = {
 
   education: [],
 
-  achievements: []
+  achievements: [],
+
+  // extras: custom additional sections — any title, any items
+  // type: "list" (bullet points) | "tags" (chips) — defaults to "list"
+  // Examples: Accomplishments, Awards, Soft Skills, Languages, Publications
+  extras: []
 };
