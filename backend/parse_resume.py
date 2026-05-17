@@ -64,7 +64,7 @@ def _split_sections(text: str) -> dict[str, str]:
         r"AWARDS?(?:\s*&\s*(?:RECOGNITION|HONORS?))?|HONORS?|REWARDS?|"
         r"SOFT SKILLS?|INTERPERSONAL SKILLS?|"
         r"LANGUAGES?|PUBLICATIONS?|VOLUNTEERING?|"
-        r"TOP SKILLS|CONTACT)\s*$",
+        r"TOP SKILLS|CONTACT)\s*:?\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
     matches = list(section_re.finditer(text))
@@ -513,8 +513,19 @@ def _parse_certifications(text: str) -> list[dict]:
     certs = []
     for line in text.splitlines():
         line = line.strip().lstrip("-•·").strip()
-        if line:
-            certs.append({"name": line, "icon": "📜", "featured": False, "link": None})
+        if not line:
+            continue
+        # Single line with multiple certs separated by · or | (common in generated PDFs)
+        if ('·' in line or ' | ' in line) and 'http' not in line:
+            parts = re.split(r'\s*[·|]\s*', line)
+        elif ';' in line and 'http' not in line:
+            parts = re.split(r'\s*;\s*', line)
+        else:
+            parts = [line]
+        for p in parts:
+            p = p.strip().lstrip("-•·").strip()
+            if p:
+                certs.append({"name": p, "icon": "📜", "featured": False, "link": None})
     return certs
 
 

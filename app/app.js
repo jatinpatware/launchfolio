@@ -55,7 +55,32 @@ document.getElementById('resume-file').addEventListener('change', async (e) => {
 // ── Validation helpers ────────────────────────────────────────────────────────
 
 const REQUIRED = ['name', 'title', 'tagline1'];
-const AI_REQUIRED = ['ai-model', 'ai-api-key'];
+const AI_REQUIRED = ['ai-api-key'];
+
+const MODELS = {
+  anthropic: [
+    { value: 'claude-sonnet-4-6',        label: 'Claude Sonnet 4.6 — recommended' },
+    { value: 'claude-opus-4-7',           label: 'Claude Opus 4.7 — most capable' },
+    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 — fastest' },
+  ],
+  openai: [
+    { value: 'gpt-4o',       label: 'GPT-4o — most capable' },
+    { value: 'gpt-4o-mini',  label: 'GPT-4o Mini — faster, cheaper' },
+    { value: 'gpt-4.1',      label: 'GPT-4.1' },
+    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini — faster, cheaper' },
+  ],
+};
+
+function populateModels(provider) {
+  const sel = document.getElementById('ai-model');
+  sel.innerHTML = '';
+  (MODELS[provider] || []).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.value;
+    opt.textContent = m.label;
+    sel.appendChild(opt);
+  });
+}
 
 function isAiOn() {
   return document.getElementById('ai-enabled').checked;
@@ -124,10 +149,16 @@ function refreshButton() {
 function toggleAI(enabled) {
   document.getElementById('ai-fields').classList.toggle('hidden', !enabled);
   document.getElementById('ai-label').textContent = enabled ? 'AI parsing enabled' : 'Use AI parsing';
-  // Clear AI errors when toggling off
   if (!enabled) AI_REQUIRED.forEach(id => setError(id, ''));
   refreshButton();
 }
+
+document.getElementById('ai-provider').addEventListener('change', e => {
+  populateModels(e.target.value);
+});
+
+// Populate models on initial load
+populateModels('anthropic');
 
 // Disable button on load — name and title are empty
 refreshButton();
