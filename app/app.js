@@ -318,8 +318,14 @@ async function generate() {
       aiForm.append('ai_api_key',  apiKey);
 
       const aiRes = await fetch('/api/ai-parse', { method: 'POST', body: aiForm });
-      if (!aiRes.ok) throw new Error('AI error: ' + await aiRes.text());
-      preparsedJson = await aiRes.json();
+      const aiText = await aiRes.text();
+      if (!aiRes.ok) {
+        // Show raw error in the panel so it's copyable
+        document.getElementById('ai-output-json').textContent = aiText;
+        document.getElementById('ai-output-actions').classList.remove('hidden');
+        throw new Error(aiText);
+      }
+      preparsedJson = JSON.parse(aiText);
 
       showAiJson(preparsedJson);
       setAiStatus('AI parsing complete. Building portfolio ZIP...');
