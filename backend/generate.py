@@ -95,6 +95,10 @@ const resumeData = {{
   github:    {js_str(data.get("github", ""))},
   portfolio: {js_str(data.get("portfolio", ""))},
   credly:    {js_str(data.get("credly", ""))},
+  phone:     {js_str(data.get("phone", ""))},
+  twitter:   {js_str(data.get("twitter", ""))},
+  leetcode:  {js_str(data.get("leetcode", ""))},
+  hackerrank: {js_str(data.get("hackerrank", ""))},
 
   heroBadges: {hero_badges_js},
 
@@ -179,7 +183,8 @@ def create_app():
 
         overrides = {k: request.form.get(k, "") for k in
                      ["name", "title", "email", "location", "linkedin", "github",
-                      "tagline1", "tagline2", "summary"]}
+                      "tagline1", "tagline2", "summary",
+                      "phone", "twitter", "leetcode", "hackerrank", "portfolio", "credly"]}
         hero_badges_raw = request.form.get("hero_badges", "")
         overrides["heroBadges"] = [b.strip() for b in hero_badges_raw.split(",") if b.strip()]
 

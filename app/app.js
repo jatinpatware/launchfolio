@@ -34,6 +34,12 @@ document.getElementById('resume-file').addEventListener('change', async (e) => {
     fillIf('tagline1', data.tagline1);
     fillIf('tagline2', data.tagline2);
     fillIf('summary',  data.summary);
+    fillIf('phone',      data.phone);
+    fillIf('twitter',    data.twitter);
+    fillIf('leetcode',   data.leetcode);
+    fillIf('hackerrank', data.hackerrank);
+    fillIf('portfolio',  data.portfolio);
+    fillIf('credly',     data.credly);
 
     if (!document.getElementById('hero-badges').value.trim() && data.heroBadges?.length) {
       document.getElementById('hero-badges').value = data.heroBadges.join(', ');
@@ -170,7 +176,8 @@ async function generate() {
 
   formData.append('enrichment', document.getElementById('enrichment').value);
 
-  ['name', 'title', 'email', 'location', 'linkedin', 'github', 'tagline1', 'tagline2', 'summary'].forEach(id => {
+  ['name', 'title', 'email', 'location', 'linkedin', 'github', 'tagline1', 'tagline2', 'summary',
+   'phone', 'twitter', 'leetcode', 'hackerrank', 'credly', 'portfolio'].forEach(id => {
     formData.append(id, document.getElementById(id).value);
   });
   formData.append('hero_badges', document.getElementById('hero-badges').value);

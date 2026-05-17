@@ -118,16 +118,25 @@ function render() {
     `).join('') +
     (d.credly ? `<a href="${d.credly}" target="_blank" class="cert-credly-link">View all badges on Credly →</a>` : '');
 
-  // Contact
-  const contactLinks = [
-    d.email    && `<a href="mailto:${d.email}" class="contact-card"><span class="contact-icon">✉️</span><span>${d.email}</span></a>`,
-    d.linkedin && `<a href="${d.linkedin}" target="_blank" class="contact-card"><span class="contact-icon">💼</span><span>LinkedIn</span></a>`,
-    d.github   && `<a href="${d.github}" target="_blank" class="contact-card"><span class="contact-icon">🐙</span><span>GitHub</span></a>`,
-    d.credly   && `<a href="${d.credly}" target="_blank" class="contact-card"><span class="contact-icon">🏅</span><span>Credly</span></a>`,
-  ].filter(Boolean);
-  document.getElementById('contact-links').innerHTML = contactLinks.length
-    ? contactLinks.join('')
-    : '<p style="color:var(--muted)">Add your contact details in data.js</p>';
+  // Contact — only render links that have a value
+  const contactDefs = [
+    { key: "email",      icon: "✉️",  label: d.email,     href: `mailto:${d.email}` },
+    { key: "linkedin",   icon: "💼",  label: "LinkedIn",  href: d.linkedin },
+    { key: "github",     icon: "🐙",  label: "GitHub",    href: d.github },
+    { key: "twitter",    icon: "🐦",  label: "Twitter/X", href: d.twitter },
+    { key: "leetcode",   icon: "💡",  label: "LeetCode",  href: d.leetcode },
+    { key: "hackerrank", icon: "⭐",  label: "HackerRank",href: d.hackerrank },
+    { key: "credly",     icon: "🏅",  label: "Credly",    href: d.credly },
+    { key: "portfolio",  icon: "🌐",  label: "Portfolio", href: d.portfolio },
+  ];
+  const contactHtml = contactDefs
+    .filter(c => d[c.key])
+    .map(c => `<a href="${c.href}" target="${c.key === 'email' ? '_self' : '_blank'}" class="contact-card">
+      <span class="contact-icon">${c.icon}</span><span>${c.label}</span>
+    </a>`)
+    .join('');
+  document.getElementById('contact-links').innerHTML = contactHtml ||
+    '<p style="color:var(--muted)">Add your contact details in data.js</p>';
 }
 
 render();

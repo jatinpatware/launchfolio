@@ -23,6 +23,9 @@
         <span id="file-name">Choose a PDF resume…</span>
         <input type="file" id="resume-file" accept=".pdf" />
       </label>
+      <p class="hint" style="margin-top:0.8rem;">
+        Don't have a PDF resume? <strong>Export from LinkedIn:</strong> LinkedIn → Me → View Profile → More → Save to PDF.
+      </p>
     </section>
 
     <!-- Step 2: Enrich -->
@@ -41,6 +44,9 @@
       <p class="merge-note">
         Enrichment text takes precedence over the resume for fields that overlap (e.g. current role, recent skills).
         Older structured data from the PDF is kept where no enrichment is provided.
+      </p>
+      <p class="merge-note" style="margin-top:0.6rem; border-color: #f59e0b;">
+        <strong>Non-AI mode tip:</strong> The rule-based parser works best with standard PDF resumes. For LinkedIn exports or complex layouts, enable AI parsing (Step 4) for much better results.
       </p>
     </section>
 
@@ -75,6 +81,26 @@
         <div class="field">
           <label for="github">GitHub URL</label>
           <input type="url" id="github" placeholder="https://github.com/..." />
+        </div>
+        <div class="field">
+          <label for="phone">Phone <span class="field-note">optional</span></label>
+          <input type="tel" id="phone" placeholder="+1 234 567 8900" />
+        </div>
+        <div class="field">
+          <label for="twitter">Twitter / X <span class="field-note">optional</span></label>
+          <input type="url" id="twitter" placeholder="https://x.com/username" />
+        </div>
+        <div class="field">
+          <label for="leetcode">LeetCode <span class="field-note">optional</span></label>
+          <input type="url" id="leetcode" placeholder="https://leetcode.com/u/username" />
+        </div>
+        <div class="field">
+          <label for="hackerrank">HackerRank <span class="field-note">optional</span></label>
+          <input type="url" id="hackerrank" placeholder="https://hackerrank.com/profile/username" />
+        </div>
+        <div class="field">
+          <label for="credly">Credly Profile <span class="field-note">optional</span></label>
+          <input type="url" id="credly" placeholder="https://www.credly.com/users/..." />
         </div>
         <div class="field full">
           <label for="tagline1">Tagline 1 <span class="required-star">*</span> <span class="field-note">bold, hero section</span></label>

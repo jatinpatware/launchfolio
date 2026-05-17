@@ -18,6 +18,10 @@ const resumeData = {
   github:    "",
   portfolio: "",
   credly:    "",
+  phone:      "",
+  twitter:    "",
+  leetcode:   "",
+  hackerrank: "",
 
   heroBadges: [],
 

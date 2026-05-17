@@ -33,6 +33,23 @@ def _find_github(text: str) -> str:
     return f"https://{m.group(0)}" if m else ""
 
 
+def _find_phone(text: str) -> str:
+    m = re.search(r'(?:\+?\d[\d\s\-().]{7,}\d)', text)
+    candidate = m.group(0).strip() if m else ""
+    # filter out things that look like years
+    if candidate and len(re.sub(r'\D', '', candidate)) >= 7:
+        return candidate
+    return ""
+
+def _find_twitter(text: str) -> str:
+    m = re.search(r'(?:twitter\.com|x\.com)/[\w]+', text, re.IGNORECASE)
+    return f"https://{m.group(0)}" if m else ""
+
+def _find_portfolio(text: str) -> str:
+    m = re.search(r'https?://(?!linkedin|github|twitter|x\.com|credly|certmetrics)[\w.-]+\.(?:io|com|dev|me|net)/[\w/.-]*', text)
+    return m.group(0) if m else ""
+
+
 def _split_sections(text: str) -> dict[str, str]:
     """
     Split resume text into named sections using common uppercase headings.
@@ -43,7 +60,8 @@ def _split_sections(text: str) -> dict[str, str]:
         r"SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|"
         r"EDUCATION|ACADEMIC BACKGROUND|"
         r"CERTIFICATIONS?|LICENSES? & CERTIFICATIONS?|"
-        r"PROJECTS|ACHIEVEMENTS?|ACCOMPLISHMENTS?)\s*$",
+        r"PROJECTS|ACHIEVEMENTS?|ACCOMPLISHMENTS?|"
+        r"TOP SKILLS|LANGUAGES?|CONTACT)\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
     matches = list(section_re.finditer(text))
@@ -75,10 +93,12 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
     overrides = overrides or {}
 
     # Name: first non-empty line that isn't an email/URL
+    # Strip LinkedIn's "Contact" prefix if present
     name = ""
-    for line in lines[:5]:
-        if not re.search(r"[@/.]", line) and len(line.split()) <= 5:
-            name = line
+    for line in lines[:8]:
+        cleaned = re.sub(r'^contact\s+', '', line.strip(), flags=re.IGNORECASE)
+        if not re.search(r"[@/.]", cleaned) and 1 < len(cleaned.split()) <= 5:
+            name = cleaned
             break
 
     # Title: line after name that looks like a job title
@@ -94,15 +114,19 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
         "email":    overrides.get("email") or _find_email(text),
         "location": overrides.get("location") or "",
         "linkedin": overrides.get("linkedin") or _find_linkedin(text),
-        "github":   overrides.get("github") or _find_github(text),
-        "portfolio": "",
-        "credly":   "",
+        "github":    overrides.get("github") or _find_github(text),
+        "phone":     overrides.get("phone") or _find_phone(text),
+        "twitter":   overrides.get("twitter") or _find_twitter(text),
+        "leetcode":  overrides.get("leetcode") or "",
+        "hackerrank": overrides.get("hackerrank") or "",
+        "portfolio": overrides.get("portfolio") or _find_portfolio(text),
+        "credly":    "",
         "tagline1": "",
         "tagline2": "",
         "sub":      "",
         "heroBadges": [],
         "summary":  sections.get("SUMMARY", ""),
-        "focus":    [],
+        "focus":    _parse_focus(text, sections.get("SUMMARY", "")),
         "skills":   _parse_skills(sections.get("SKILLS", sections.get("TECHNICAL SKILLS", ""))),
         "experience": _parse_experience(sections.get("EXPERIENCE", sections.get("WORK EXPERIENCE", sections.get("PROFESSIONAL EXPERIENCE", sections.get("WORK HISTORY", ""))))),
         "certifications": _parse_certifications(sections.get("CERTIFICATIONS", "")),
@@ -114,25 +138,70 @@ def _build_data(text: str, overrides: dict | None = None) -> dict:
     return data
 
 
+def _parse_focus(full_text: str, summary: str) -> list[str]:
+    """Extract focus points — lines starting with →, ✦, or similar bullet styles."""
+    focus_items = []
+    arrow_re = re.compile(r'^[→✦►▶•]\s*(.+)', re.UNICODE)
+    for line in full_text.splitlines():
+        m = arrow_re.match(line.strip())
+        if m:
+            item = m.group(1).strip()
+            if 10 < len(item) < 120:
+                focus_items.append(item)
+    return focus_items[:6]  # cap at 6 items
+
+
 def _parse_experience(text: str) -> list[dict]:
     """
-    Heuristic experience parser. Handles common resume formats:
-    - Company on one line with dates, title on next line
-    - Title | Company | Dates
-    - Bullets starting with - or •
+    Parse experience from both traditional resume format and LinkedIn PDF export format.
+    LinkedIn format: Company → Title → Date Range (Duration) → Location → Bullets
+    Traditional format: Company + Date on same line, Title below, then bullets
     """
     if not text.strip():
         return []
 
     date_re = re.compile(
-        r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|'
-        r'June|July|August|September|October|November|December)\s+\d{4}'
-        r'|\d{4}\s*[-–—]\s*(\d{4}|Present|Current|Now)',
+        r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|'
+        r'Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
+        r'\s+\d{4}|\b\d{4}\s*[-–—]\s*(?:\d{4}|Present|Current|Now)',
         re.IGNORECASE
     )
-    bullet_re = re.compile(r'^[-•*·]\s+(.+)')
+    period_re = re.compile(
+        r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|\d{4})'
+        r'\s*[-–—]\s*'
+        r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|\d{4}|Present|Current|Now)',
+        re.IGNORECASE
+    )
+    bullet_re = re.compile(r'^[-•*·→✦►]\s*(.+)')
+    duration_re = re.compile(r'^\(?\s*\d+\s+(?:year|month|yr|mo)', re.IGNORECASE)
+    # Patterns that indicate a location line (short, no role keywords)
+    role_keywords = re.compile(r'\b(engineer|developer|analyst|manager|lead|architect|designer|'
+                               r'scientist|director|head|vp|consultant|intern|associate|senior|junior|'
+                               r'staff|principal|data|software|product)\b', re.IGNORECASE)
 
-    lines = [l.rstrip() for l in text.splitlines()]
+    def has_date(line):
+        return bool(date_re.search(line))
+
+    def extract_period(line):
+        m = period_re.search(line)
+        if m:
+            period = m.group(0)
+            # strip trailing duration like "(1 year 3 months)"
+            period = re.sub(r'\s*\([\d\s\wyears months]+\)\s*$', '', period, flags=re.IGNORECASE).strip()
+            return period
+        return ""
+
+    def is_location(line):
+        """Heuristic: short line, no role keywords, looks like a city/country."""
+        if len(line.split()) > 5:
+            return False
+        if role_keywords.search(line):
+            return False
+        if re.search(r',\s*[A-Z]', line):  # "City, Country" pattern
+            return True
+        return False
+
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
     entries = []
     current_company = None
     current_roles = []
@@ -140,82 +209,116 @@ def _parse_experience(text: str) -> list[dict]:
 
     def flush_role():
         nonlocal current_role
-        if current_role and current_company is not None:
+        if current_role and (current_role.get("title") or current_role.get("bullets")):
             current_roles.append(current_role)
-            current_role = None
+        current_role = None
 
     def flush_company():
         nonlocal current_company, current_roles
-        if current_company is not None and current_roles:
+        flush_role()
+        if current_company and current_roles:
+            # Clean up: filter roles that look like location/duration artifacts
+            valid_roles = [r for r in current_roles
+                           if r.get("bullets") or (r.get("title") and role_keywords.search(r.get("title", "")))]
+            if not valid_roles:
+                valid_roles = current_roles[:1]  # keep at least the first
             entries.append({
                 "company": current_company,
                 "companyDesc": "",
-                "period": current_roles[0].get("period", ""),
-                "roles": current_roles,
+                "period": valid_roles[0].get("period", "") if valid_roles else "",
+                "roles": valid_roles,
             })
         current_company = None
         current_roles = []
 
-    for line in lines:
-        if not line.strip():
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        # Skip pure duration lines like "(1 year 3 months)"
+        if duration_re.match(line):
+            i += 1
             continue
 
-        bullet_m = bullet_re.match(line.strip())
-        has_date = bool(date_re.search(line))
-
+        # Bullet line
+        bullet_m = bullet_re.match(line)
         if bullet_m:
-            if current_role:
+            if current_role is None and current_company:
+                current_role = {"title": "", "period": "", "stack": "", "bullets": []}
+            if current_role is not None:
                 current_role["bullets"].append(bullet_m.group(1).strip())
+            i += 1
             continue
 
-        # Line with a date — likely a role/company line
-        if has_date:
-            # Extract date range
-            period_m = re.search(
-                r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|'
-                r'\d{4})\s*[-–—]\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4}|'
-                r'\d{4}|Present|Current|Now)',
-                line, re.IGNORECASE
-            )
-            period = period_m.group(0).strip() if period_m else ""
-            title_part = date_re.sub('', line).strip().strip('|-').strip()
-
-            if current_company is None:
-                # First date line — this is company + date or title + date
-                flush_role()
-                current_company = title_part or "Unknown Company"
-                current_role = {"title": "", "period": period, "stack": "", "bullets": []}
-            else:
-                # Subsequent date line — new role at same or new company
-                flush_role()
-                if title_part and title_part.lower() not in current_company.lower():
-                    # Looks like a new company
-                    if len(entries) > 0 or current_roles:
-                        flush_company()
-                        current_company = title_part
-                current_role = {"title": title_part, "period": period, "stack": "", "bullets": []}
-        elif line.strip().lower().startswith("stack:") or line.strip().lower().startswith("tech:"):
+        # Stack/tech line
+        if re.match(r'^(stack|tech(?:nologies)?|tools?)\s*:', line, re.IGNORECASE):
             if current_role:
-                current_role["stack"] = re.sub(r'^(stack|tech)\s*:\s*', '', line.strip(), flags=re.IGNORECASE)
-        else:
-            # No date, no bullet — could be title or company name
-            if current_role is not None and not current_role["title"]:
-                current_role["title"] = line.strip()
-            elif current_role is not None and current_role["bullets"]:
-                # After bullets, a plain line might be a new role title
-                flush_role()
-                current_role = {"title": line.strip(), "period": "", "stack": "", "bullets": []}
-            elif current_company is None:
-                current_company = line.strip()
+                current_role["stack"] = re.sub(r'^[^:]+:\s*', '', line).strip()
+            i += 1
+            continue
 
-    flush_role()
+        # Line with date
+        if has_date(line):
+            period = extract_period(line)
+            if current_role is not None and not current_role.get("period"):
+                current_role["period"] = period
+            elif current_role is not None and current_role.get("period"):
+                # Another date line → new role
+                flush_role()
+                current_role = {"title": "", "period": period, "stack": "", "bullets": []}
+            elif current_company is not None:
+                # Date after company line (LinkedIn: company → title → date)
+                if current_role is None:
+                    current_role = {"title": "", "period": period, "stack": "", "bullets": []}
+                else:
+                    current_role["period"] = period
+            else:
+                current_company = "Unknown"
+                current_role = {"title": "", "period": period, "stack": "", "bullets": []}
+            i += 1
+            continue
+
+        # Location line — skip
+        if is_location(line):
+            i += 1
+            continue
+
+        # Plain text — company name, job title, or description
+        if current_role is not None and current_role.get("bullets"):
+            # Currently in bullets, plain line = new company starts
+            flush_company()
+            current_company = line
+        elif current_role is not None and not current_role.get("title") and role_keywords.search(line):
+            # Role exists but no title — this is the title
+            current_role["title"] = line
+        elif current_role is not None and current_role.get("title"):
+            # Has title already — could be new company or description text
+            if role_keywords.search(line):
+                # Looks like a new role title at same company
+                flush_role()
+                current_role = {"title": line, "period": "", "stack": "", "bullets": []}
+            else:
+                flush_company()
+                current_company = line
+        elif current_company is not None and current_role is None:
+            # Have company, no role — this is the title
+            current_role = {"title": line, "period": "", "stack": "", "bullets": []}
+        else:
+            # No company yet, or ambiguous
+            if current_company is None:
+                current_company = line
+            else:
+                flush_company()
+                current_company = line
+
+        i += 1
+
     flush_company()
 
-    # Clean up: if role title is empty and company isn't, use company as title
-    for entry in entries:
-        for role in entry["roles"]:
-            if not role["title"]:
-                role["title"] = entry["company"]
+    # Post-process: remove entries where company is a duration or single word artifact
+    entries = [e for e in entries
+               if e["company"] and not duration_re.match(e["company"])
+               and not re.match(r'^[\d\s\-–—()]+$', e["company"])]
 
     return entries
 
@@ -245,18 +348,50 @@ def _parse_certifications(text: str) -> list[dict]:
 
 def _parse_education(text: str) -> list[dict]:
     entries = []
-    # Look for degree lines — heuristic: lines containing common degree keywords
-    degree_re = re.compile(r"(B\.?[A-Z]\.?|M\.?[A-Z]\.?|Ph\.?D|Bachelor|Master|MBA)", re.IGNORECASE)
-    lines = text.splitlines()
+    degree_re = re.compile(
+        r'(?:^|\s)(B\.?Tech|M\.?Tech|B\.?E\b\.?|M\.?E\b\.?|'
+        r'B\.?Sc\b\.?|M\.?Sc\b\.?|M\.?S\b\.?|B\.?S\b\.?|'
+        r'B\.?A\b\.?|M\.?A\b\.?|B\.?Com\b|MBA\b|LLB\b|B\.?Des\b|'
+        r'Ph\.?D\.?|Bachelors?|Masters?)',
+        re.IGNORECASE
+    )
+    cgpa_re = re.compile(r'(?:CGPA|GPA)\s*[:\-·]?\s*([0-9]+(?:\.[0-9]+)?)', re.IGNORECASE)
+    period_re = re.compile(r'\b(\d{4})\s*[-–—]\s*(\d{4}|Present)\b', re.IGNORECASE)
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
     i = 0
     while i < len(lines):
-        if degree_re.search(lines[i]):
+        line = lines[i]
+        if degree_re.search(line):
+            # Degree line may include the period inline (e.g. "M.Tech — CSE 2016 – 2018")
+            period_m = period_re.search(line)
+            period = period_m.group(0) if period_m else ""
+            degree = re.sub(r'\s*\d{4}\s*[-–—]\s*(?:\d{4}|Present)', '', line).strip()
+
+            # Next line(s): school, CGPA, notes
+            school = ""
+            cgpa = ""
+            notes = []
+            j = i + 1
+            while j < len(lines) and not degree_re.search(lines[j]):
+                l = lines[j]
+                cgpa_m = cgpa_re.search(l)
+                if cgpa_m and not cgpa:
+                    cgpa = cgpa_m.group(1)
+                    school = school or re.sub(r'\s*·?\s*CGPA.*$', '', l, flags=re.IGNORECASE).strip()
+                elif not school and not degree_re.search(l):
+                    school = l
+                elif school and l and not cgpa_m:
+                    notes.append(l)
+                j += 1
+
             entries.append({
-                "degree": lines[i].strip(),
-                "school": lines[i + 1].strip() if i + 1 < len(lines) else "",
-                "period": "",
-                "cgpa":   "",
-                "notes":  [],
+                "degree": degree,
+                "school": school,
+                "period": period,
+                "cgpa":   cgpa,
+                "notes":  notes[:2],
             })
-        i += 1
+            i = j
+        else:
+            i += 1
     return entries
