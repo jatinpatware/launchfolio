@@ -270,6 +270,21 @@ textarea:focus { outline: none; border-color: var(--teal); }
   word-break: break-all;
 }
 
+/* ── Required / validation ── */
+.required-star { color: #e05; font-weight: 700; }
+
+.field-error-msg {
+  font-size: 0.78rem;
+  color: #ff6b6b;
+  margin-top: 0.25rem;
+}
+
+.field input.field-error,
+.field textarea.field-error,
+.field select.field-error {
+  border-color: #ff6b6b;
+}
+
 .hidden { display: none; }
 
 @media (max-width: 600px) {

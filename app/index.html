@@ -51,12 +51,14 @@
 
       <div class="field-grid">
         <div class="field full">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" placeholder="Jatin Patware" />
+          <label for="name">Full Name <span class="required-star">*</span></label>
+          <input type="text" id="name" placeholder="Jane Smith" />
+          <span id="name-error" class="field-error-msg hidden"></span>
         </div>
         <div class="field full">
-          <label for="title">Job Title</label>
-          <input type="text" id="title" placeholder="Senior Data Engineer" />
+          <label for="title">Job Title <span class="required-star">*</span></label>
+          <input type="text" id="title" placeholder="Senior Software Engineer" />
+          <span id="title-error" class="field-error-msg hidden"></span>
         </div>
         <div class="field">
           <label for="email">Email</label>
@@ -120,12 +122,14 @@
             </select>
           </div>
           <div class="field">
-            <label for="ai-model">Model <span class="field-note">e.g. claude-opus-4-7 or gpt-4o</span></label>
+            <label for="ai-model">Model <span class="required-star">*</span> <span class="field-note">e.g. claude-opus-4-7 or gpt-4o</span></label>
             <input type="text" id="ai-model" placeholder="claude-opus-4-7" />
+            <span id="ai-model-error" class="field-error-msg hidden"></span>
           </div>
           <div class="field full">
-            <label for="ai-api-key">API Key <span class="field-note">not stored — sent only to your chosen provider</span></label>
+            <label for="ai-api-key">API Key <span class="required-star">*</span> <span class="field-note">not stored — sent only to your chosen provider</span></label>
             <input type="password" id="ai-api-key" placeholder="sk-ant-..." autocomplete="off" />
+            <span id="ai-api-key-error" class="field-error-msg hidden"></span>
           </div>
         </div>
         <p class="merge-note">
