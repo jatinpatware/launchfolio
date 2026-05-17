@@ -271,9 +271,23 @@ def _parse_projects(text: str) -> list[dict]:
         if current and current.get("name"):
             projects.append(current)
 
+    # Matches "Technologies: ..." / "Tech Stack: ..." / "Stack: ..." / "Tools: ..."
+    tech_prefix_re = re.compile(
+        r'^(?:Technologies|Tech(?:nology)?(?:\s+Stack)?|Stack|Tools?)\s*:\s*(.+)',
+        re.IGNORECASE,
+    )
+
     for raw in raw_lines:
         line = raw.strip()
         if not line:
+            continue
+
+        # "Technologies: X, Y, Z" — attach to current project as stack
+        tech_m = tech_prefix_re.match(line)
+        if tech_m:
+            if current is not None and not current["stack"]:
+                stack_str = tech_m.group(1).strip()
+                current["stack"] = [s.strip() for s in re.split(r'[,·]', stack_str) if s.strip()]
             continue
 
         m = pipe_re.match(line)
