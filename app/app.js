@@ -69,6 +69,31 @@ const MODELS = {
     { value: 'gpt-4.1',      label: 'GPT-4.1' },
     { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini — faster, cheaper' },
   ],
+  google: [
+    { value: 'gemini-2.5-pro',   label: 'Gemini 2.5 Pro — most capable' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash — recommended' },
+    { value: 'gemini-1.5-pro',   label: 'Gemini 1.5 Pro' },
+    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash — fast' },
+  ],
+  deepseek: [
+    { value: 'deepseek-chat',     label: 'DeepSeek V3 — recommended' },
+    { value: 'deepseek-reasoner', label: 'DeepSeek R1 — reasoning' },
+  ],
+  groq: [
+    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — recommended' },
+    { value: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B — fastest' },
+    { value: 'mixtral-8x7b-32768',      label: 'Mixtral 8x7B' },
+    { value: 'gemma2-9b-it',            label: 'Gemma 2 9B' },
+  ],
+  ollama: [
+    { value: 'llama3.2',    label: 'Llama 3.2 (3B) — lightweight' },
+    { value: 'llama3.1',    label: 'Llama 3.1 (8B)' },
+    { value: 'llama3',      label: 'Llama 3 (8B)' },
+    { value: 'mistral',     label: 'Mistral 7B' },
+    { value: 'phi4',        label: 'Phi-4' },
+    { value: 'qwen2.5',     label: 'Qwen 2.5' },
+    { value: 'deepseek-r1', label: 'DeepSeek R1 (local)' },
+  ],
 };
 
 function populateModels(provider) {
@@ -208,10 +233,41 @@ document.querySelectorAll('.theme-swatch').forEach(btn => {
 
 // ── Generate ──────────────────────────────────────────────────────────────────
 
+// ── AI output panel helpers ───────────────────────────────────────────────────
+
+function showAiPanel() {
+  const panel = document.getElementById('ai-output-panel');
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setAiStatus(msg, isError) {
+  const el = document.getElementById('ai-output-status');
+  el.textContent = msg;
+  el.className = 'ai-status' + (isError ? ' ai-status-error' : '');
+}
+
+function showAiJson(data) {
+  const pre = document.getElementById('ai-output-json');
+  pre.textContent = JSON.stringify(data, null, 2);
+  document.getElementById('ai-output-actions').classList.remove('hidden');
+}
+
+function copyAiJson() {
+  const text = document.getElementById('ai-output-json').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('ai-copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+
 async function generate() {
   clearErrors();
   if (!validate()) {
-    // Scroll to first error
     const firstErr = document.querySelector('.field-error');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
@@ -219,49 +275,87 @@ async function generate() {
 
   const btn = document.getElementById('generate-btn');
   const originalText = btn.textContent;
-  btn.textContent = 'Generating…';
   btn.disabled = true;
 
-  // Hide any previous output while re-generating
   const outputEl = document.getElementById('output');
   outputEl.classList.add('hidden');
 
-  const formData = new FormData();
+  // Reset AI panel
+  document.getElementById('ai-output-panel').classList.add('hidden');
+  document.getElementById('ai-output-json').textContent = '';
+  document.getElementById('ai-output-actions').classList.add('hidden');
 
+  // Build shared form data
+  const baseForm = new FormData();
   const resumeFile = document.getElementById('resume-file').files[0];
-  if (resumeFile) formData.append('resume', resumeFile);
-
-  formData.append('enrichment', document.getElementById('enrichment').value);
-
+  if (resumeFile) baseForm.append('resume', resumeFile);
+  baseForm.append('enrichment', document.getElementById('enrichment').value);
   ['name', 'title', 'email', 'location', 'linkedin', 'github', 'tagline1', 'tagline2', 'summary',
    'phone', 'twitter', 'leetcode', 'hackerrank', 'credly', 'portfolio'].forEach(id => {
-    formData.append(id, document.getElementById(id).value);
+    baseForm.append(id, document.getElementById(id).value);
   });
-  formData.append('hero_badges', document.getElementById('hero-badges').value);
-  formData.append('theme', selectedTheme);
+  baseForm.append('hero_badges', document.getElementById('hero-badges').value);
+  baseForm.append('theme', selectedTheme);
 
-  if (isAiOn()) {
-    formData.append('ai_provider', document.getElementById('ai-provider').value);
-    formData.append('ai_model',    document.getElementById('ai-model').value);
-    formData.append('ai_api_key',  document.getElementById('ai-api-key').value);
-  }
+  let preparsedJson = null;
 
   try {
-    const res = await fetch('/api/generate', { method: 'POST', body: formData });
+    if (isAiOn()) {
+      const provider = document.getElementById('ai-provider').value;
+      const model    = document.getElementById('ai-model').value;
+      const apiKey   = document.getElementById('ai-api-key').value;
+
+      // Phase 1: call AI parse, show output
+      showAiPanel();
+      setAiStatus(`Contacting ${provider} (${model}) — this may take a moment...`);
+      btn.textContent = 'Asking AI...';
+
+      const aiForm = new FormData();
+      if (resumeFile) aiForm.append('resume', resumeFile);
+      aiForm.append('enrichment', document.getElementById('enrichment').value);
+      aiForm.append('ai_provider', provider);
+      aiForm.append('ai_model',    model);
+      aiForm.append('ai_api_key',  apiKey);
+
+      const aiRes = await fetch('/api/ai-parse', { method: 'POST', body: aiForm });
+      if (!aiRes.ok) throw new Error('AI error: ' + await aiRes.text());
+      preparsedJson = await aiRes.json();
+
+      showAiJson(preparsedJson);
+      setAiStatus('AI parsing complete. Building portfolio ZIP...');
+      btn.textContent = 'Building ZIP...';
+    } else {
+      btn.textContent = 'Generating...';
+    }
+
+    // Phase 2: generate ZIP
+    const genForm = new FormData();
+    for (const [k, v] of baseForm.entries()) genForm.append(k, v);
+    if (preparsedJson) {
+      genForm.append('preparsed_json', JSON.stringify(preparsedJson));
+    } else {
+      // No AI — add provider fields so backend skips AI path
+    }
+
+    const res = await fetch('/api/generate', { method: 'POST', body: genForm });
     if (!res.ok) throw new Error(await res.text());
 
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
+    document.getElementById('download-link').href = url;
 
-    const link = document.getElementById('download-link');
-    link.href = url;
-
+    if (isAiOn()) setAiStatus('Done. Review the AI output above, then download your portfolio.');
     outputEl.classList.remove('hidden');
     outputEl.scrollIntoView({ behavior: 'smooth' });
+
   } catch (err) {
-    alert('Generation failed: ' + err.message + '\n\nMake sure the backend is running:\n  cd backend && python3 generate.py --serve');
+    if (isAiOn()) {
+      setAiStatus(err.message, true);
+    } else {
+      alert('Generation failed: ' + err.message + '\n\nMake sure the backend is running:\n  cd backend && python3 generate.py --serve');
+    }
   } finally {
     btn.textContent = originalText;
-    refreshButton(); // re-evaluate rather than force-enable
+    refreshButton();
   }
 }

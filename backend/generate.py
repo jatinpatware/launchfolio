@@ -177,6 +177,37 @@ def create_app():
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
+    @app.post("/api/ai-parse")
+    def ai_parse_endpoint():
+        """Run AI parsing only — returns JSON for the output preview panel."""
+        from parse_resume import _extract_text
+        from llm import is_ai_enabled
+        from parse_ai import parse_with_ai
+
+        ai_config = {
+            "provider": request.form.get("ai_provider", "anthropic").lower(),
+            "model":    request.form.get("ai_model", "").strip(),
+            "api_key":  request.form.get("ai_api_key", "").strip(),
+        }
+        if not is_ai_enabled(ai_config):
+            return {"error": "AI not configured — check provider, model, and API key"}, 400
+
+        resume_file = request.files.get("resume")
+        enrichment  = request.form.get("enrichment", "").strip()
+        tmp_path = None
+        try:
+            if resume_file and resume_file.filename:
+                tmp_path = f"/tmp/launchfolio_aiparse_{os.getpid()}.pdf"
+                resume_file.save(tmp_path)
+            resume_text = _extract_text(tmp_path) if tmp_path else ""
+            result = parse_with_ai(resume_text, enrichment, ai_config)
+            return result
+        except Exception as e:
+            return {"error": str(e)}, 500
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
     @app.post("/api/generate")
     def generate():
         from parse_resume import parse, _extract_text
@@ -207,15 +238,18 @@ def create_app():
                 tmp_path = f"/tmp/launchfolio_resume_{os.getpid()}.pdf"
                 resume_file.save(tmp_path)
 
-            if is_ai_enabled(ai_config):
-                # ── AI path: one LLM call handles parse + merge ──────────
+            # Two-phase flow: frontend may send pre-parsed JSON to skip a second LLM call
+            preparsed_raw = request.form.get("preparsed_json", "").strip()
+            if preparsed_raw:
+                data = json.loads(preparsed_raw)
+                from enrich import _apply_overrides
+                data = _apply_overrides(data, overrides)
+            elif is_ai_enabled(ai_config):
                 resume_text = _extract_text(tmp_path) if tmp_path else ""
                 data = parse_with_ai(resume_text, enrichment, ai_config)
-                # Still apply explicit form overrides on top
                 from enrich import _apply_overrides
                 data = _apply_overrides(data, overrides)
             else:
-                # ── Non-AI path: regex parse + rule-based merge ──────────
                 base_data = parse(tmp_path) if tmp_path else {}
                 data = merge(base_data, enrichment, overrides)
 

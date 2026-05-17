@@ -196,6 +196,22 @@
       </div>
     </section>
 
+    <!-- AI Output Panel -->
+    <div id="ai-output-panel" class="hidden ai-output-panel">
+      <div class="ai-output-header">
+        <span>AI Output</span>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+          <button type="button" id="ai-copy-btn" class="ai-copy-btn" onclick="copyAiJson()">Copy JSON</button>
+          <button type="button" class="ai-close-btn" onclick="document.getElementById('ai-output-panel').classList.add('hidden')">✕</button>
+        </div>
+      </div>
+      <div id="ai-output-status" class="ai-status">Waiting...</div>
+      <pre id="ai-output-json" class="ai-output-json"></pre>
+      <div id="ai-output-actions" class="hidden" style="padding:0.8rem 1rem;font-size:0.8rem;color:var(--muted);">
+        Review the parsed data above. If anything looks off, close this panel and adjust the enrichment text, then regenerate.
+      </div>
+    </div>
+
     <!-- Step 4: Generate -->
     <section class="step">
       <h2>Step 4 — Generate</h2>
