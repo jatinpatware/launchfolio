@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+uploads/
+*.pdf
+!template/resume/.gitkeep
+node_modules/
+.DS_Store

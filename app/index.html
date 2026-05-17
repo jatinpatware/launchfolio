@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaunchFolio — Resume to Portfolio Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header>
+    <h1>LaunchFolio</h1>
+    <p>Upload your resume. Get a deployed portfolio.</p>
+  </header>
+
+  <main>
+    <form id="upload-form">
+
+      <section class="step">
+        <h2>Step 1 — Upload Resume</h2>
+        <label for="resume-file" class="file-label">
+          <span id="file-name">Choose a PDF resume…</span>
+          <input type="file" id="resume-file" accept=".pdf" required />
+        </label>
+      </section>
+
+      <section class="step">
+        <h2>Step 2 — Fill in Details</h2>
+        <p class="hint">Pre-filled from your resume where possible. Correct anything that looks wrong.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="Jane Smith" />
+          </div>
+          <div class="field">
+            <label for="title">Job Title</label>
+            <input type="text" id="title" placeholder="Senior Data Engineer" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="jane@example.com" />
+          </div>
+          <div class="field">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="San Francisco, CA" />
+          </div>
+          <div class="field">
+            <label for="linkedin">LinkedIn URL</label>
+            <input type="url" id="linkedin" placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div class="field">
+            <label for="github">GitHub URL</label>
+            <input type="url" id="github" placeholder="https://github.com/..." />
+          </div>
+        </div>
+      </section>
+
+      <section class="step">
+        <h2>Step 3 — Generate</h2>
+        <button type="submit" id="generate-btn">Generate Portfolio →</button>
+      </section>
+
+    </form>
+
+    <div id="output" class="hidden">
+      <h2>Your portfolio is ready</h2>
+      <p>Download the ZIP and follow the steps below to deploy to GitHub Pages.</p>
+      <a id="download-link" class="btn-download" download="launchfolio-portfolio.zip">Download ZIP</a>
+
+      <details class="deploy-steps">
+        <summary>How to deploy (60 seconds)</summary>
+        <ol>
+          <li>Unzip the downloaded file</li>
+          <li>Create a new GitHub repo named <code>&lt;yourusername&gt;.github.io</code></li>
+          <li>Push the files: <code>git init &amp;&amp; git remote add origin &lt;repo-url&gt; &amp;&amp; git add . &amp;&amp; git push -u origin main</code></li>
+          <li>Go to repo Settings → Pages → Source: main → Save</li>
+          <li>Your portfolio is live at <code>https://&lt;yourusername&gt;.github.io</code></li>
+        </ol>
+      </details>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
