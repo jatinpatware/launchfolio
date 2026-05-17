@@ -87,7 +87,8 @@ function isAiOn() {
 }
 
 function fieldVal(id) {
-  return document.getElementById(id).value.trim();
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
 }
 
 function setError(id, msg) {
@@ -124,21 +125,26 @@ function validate() {
 }
 
 function currentProvider() {
-  return document.getElementById('ai-provider').value;
+  const el = document.getElementById('ai-provider');
+  return el ? el.value : 'anthropic';
 }
 
 function apiKeyRequired() {
-  return currentProvider() !== 'ollama';
+  return isAiOn() && currentProvider() !== 'ollama';
 }
 
 function refreshButton() {
-  const btn = document.getElementById('generate-btn');
-  const nameOk     = !!fieldVal('name');
-  const titleOk    = !!fieldVal('title');
-  const tagline1Ok = !!fieldVal('tagline1');
-  const apiOk      = !apiKeyRequired() || !!fieldVal('ai-api-key');
-  const aiOk       = !isAiOn() || apiOk;
-  btn.disabled = !(nameOk && titleOk && tagline1Ok && aiOk);
+  try {
+    const btn = document.getElementById('generate-btn');
+    if (!btn) return;
+    const nameOk     = !!fieldVal('name');
+    const titleOk    = !!fieldVal('title');
+    const tagline1Ok = !!fieldVal('tagline1');
+    const keyOk      = !apiKeyRequired() || !!fieldVal('ai-api-key');
+    btn.disabled = !(nameOk && titleOk && tagline1Ok && keyOk);
+  } catch (e) {
+    console.error('refreshButton:', e);
+  }
 }
 
 // ── Wire up live validation ───────────────────────────────────────────────────
@@ -146,9 +152,11 @@ function refreshButton() {
 [...REQUIRED, ...AI_REQUIRED].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
-    el.addEventListener('input', () => {
-      if (el.classList.contains('field-error')) setError(id, '');
-      refreshButton();
+    ['input', 'change', 'keyup'].forEach(evt => {
+      el.addEventListener(evt, () => {
+        if (el.classList.contains('field-error')) setError(id, '');
+        refreshButton();
+      });
     });
   }
 });
