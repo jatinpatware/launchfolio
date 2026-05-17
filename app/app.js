@@ -126,6 +126,23 @@ function toggleAI(enabled) {
 // Disable button on load — name and title are empty
 refreshButton();
 
+// ── Theme picker ──────────────────────────────────────────────────────────────
+const THEME_LABELS = {
+  ocean: 'Ocean (default)', midnight: 'Midnight', forest: 'Forest',
+  ember: 'Ember', rose: 'Rose',
+};
+
+let selectedTheme = 'ocean';
+
+document.querySelectorAll('.theme-swatch').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.theme-swatch').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTheme = btn.dataset.theme;
+    document.getElementById('theme-name').textContent = THEME_LABELS[selectedTheme] || selectedTheme;
+  });
+});
+
 // ── Generate ──────────────────────────────────────────────────────────────────
 
 async function generate() {
@@ -157,6 +174,7 @@ async function generate() {
     formData.append(id, document.getElementById(id).value);
   });
   formData.append('hero_badges', document.getElementById('hero-badges').value);
+  formData.append('theme', selectedTheme);
 
   if (isAiOn()) {
     formData.append('ai_provider', document.getElementById('ai-provider').value);

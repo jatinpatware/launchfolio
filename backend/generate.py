@@ -22,6 +22,45 @@ from parse_resume import parse
 
 TEMPLATE_DIR = Path(__file__).parent.parent / "template"
 
+THEMES = {
+    "ocean": {   # default
+        "--bg": "#0d1b2a", "--bg2": "#112233", "--bg3": "#152840",
+        "--teal": "#00b4d8", "--teal-dim": "#0096b4",
+        "--white": "#f0f4f8", "--muted": "#8899aa",
+        "--card-bg": "#132035", "--border": "#1e3a55",
+    },
+    "midnight": {
+        "--bg": "#09090f", "--bg2": "#111122", "--bg3": "#1a1a2e",
+        "--teal": "#818cf8", "--teal-dim": "#6366f1",
+        "--white": "#f1f0ff", "--muted": "#8888bb",
+        "--card-bg": "#111128", "--border": "#2a2a4a",
+    },
+    "forest": {
+        "--bg": "#091510", "--bg2": "#0f2018", "--bg3": "#142b1e",
+        "--teal": "#34d399", "--teal-dim": "#10b981",
+        "--white": "#f0faf4", "--muted": "#7aaa8a",
+        "--card-bg": "#0e1f16", "--border": "#1a3f2a",
+    },
+    "ember": {
+        "--bg": "#130e09", "--bg2": "#1e1610", "--bg3": "#2b1e14",
+        "--teal": "#fb923c", "--teal-dim": "#f97316",
+        "--white": "#fef3ea", "--muted": "#aa9070",
+        "--card-bg": "#1a1208", "--border": "#3a2510",
+    },
+    "rose": {
+        "--bg": "#120a0e", "--bg2": "#1e1018", "--bg3": "#2a1420",
+        "--teal": "#fb7185", "--teal-dim": "#f43f5e",
+        "--white": "#fff0f3", "--muted": "#aa8090",
+        "--card-bg": "#1a0d14", "--border": "#3a1a26",
+    },
+}
+
+
+def _render_theme_css(theme_name: str) -> str:
+    theme = THEMES.get(theme_name, THEMES["ocean"])
+    vars_block = "\n".join(f"  {k}: {v};" for k, v in theme.items())
+    return f":root {{\n{vars_block}\n}}\n"
+
 
 def _render_data_js(data: dict) -> str:
     """Render data.js from parsed resume dict."""
@@ -86,12 +125,13 @@ def build_zip(data: dict) -> bytes:
         for path in TEMPLATE_DIR.rglob("*"):
             if path.is_file():
                 arcname = path.relative_to(TEMPLATE_DIR)
-                if str(arcname) == "data.js":
+                if str(arcname) in ("data.js", "theme.css"):
                     continue
                 zf.write(path, arcname)
 
         # Write generated data.js
         zf.writestr("data.js", _render_data_js(data))
+        zf.writestr("theme.css", _render_theme_css(data.get("_theme", "ocean")))
 
     return buf.getvalue()
 
@@ -171,6 +211,7 @@ def create_app():
                 base_data = parse(tmp_path) if tmp_path else {}
                 data = merge(base_data, enrichment, overrides)
 
+            data["_theme"] = request.form.get("theme", "ocean")
             zip_bytes = build_zip(data)
             return send_file(
                 io.BytesIO(zip_bytes),

@@ -287,6 +287,44 @@ textarea:focus { outline: none; border-color: var(--teal); }
 
 .hidden { display: none; }
 
+/* ── Theme picker ── */
+.theme-picker {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.theme-swatch {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  position: relative;
+  background: var(--sw-bg);
+  transition: transform 0.15s, border-color 0.15s;
+  overflow: hidden;
+}
+
+.theme-swatch::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 55%;
+  height: 55%;
+  background: var(--sw-accent);
+  border-radius: 50% 0 0 0;
+}
+
+.theme-swatch:hover { transform: scale(1.12); }
+
+.theme-swatch.active {
+  border-color: var(--white);
+  transform: scale(1.12);
+}
+
 @media (max-width: 600px) {
   .field-grid   { grid-template-columns: 1fr; }
   .field.full   { grid-column: 1; }
