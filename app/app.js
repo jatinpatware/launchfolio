@@ -54,7 +54,7 @@ document.getElementById('resume-file').addEventListener('change', async (e) => {
 
 // ── Validation helpers ────────────────────────────────────────────────────────
 
-const REQUIRED = ['name', 'title', 'tagline1'];
+const REQUIRED = ['name', 'title'];
 const AI_REQUIRED = ['ai-api-key'];
 
 const MODELS = {
@@ -162,11 +162,10 @@ function refreshButton() {
   try {
     const btn = document.getElementById('generate-btn');
     if (!btn) return;
-    const nameOk     = !!fieldVal('name');
-    const titleOk    = !!fieldVal('title');
-    const tagline1Ok = !!fieldVal('tagline1');
-    const keyOk      = !apiKeyRequired() || !!fieldVal('ai-api-key');
-    btn.disabled = !(nameOk && titleOk && tagline1Ok && keyOk);
+    const nameOk  = !!fieldVal('name');
+    const titleOk = !!fieldVal('title');
+    const keyOk   = !apiKeyRequired() || !!fieldVal('ai-api-key');
+    btn.disabled = !(nameOk && titleOk && keyOk);
   } catch (e) {
     console.error('refreshButton:', e);
   }
